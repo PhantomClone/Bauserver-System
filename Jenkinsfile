@@ -37,6 +37,9 @@ pipeline {
             }
             steps {
                 sh 'echo "Deploying to dev environment..."'
+                sh "#!/bin/bash \n" +
+                    "sftp -o StrictHostKeyChecking=no dev@172.17.0.1:builds/ <<< \$'put Bauserver-System-Impl/target/Bauserver-System-Impl-*.jar'"
+
             }
         }
         stage('Prod deployment') {
