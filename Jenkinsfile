@@ -18,9 +18,28 @@ pipeline {
                 sh 'mvn package'
             }
         }
-        stage('Deploy API') {
+        stage('Deploy API Snapshot') {
+            when {
+                branch 'dev'
+            }
             steps {
-                sh 'mvn deploy -f Bauserver-System-API/pom.xml'
+                configFileProvider([configFile(fileId: 'a98d3b68-c3c3-41f5-a648-b70fd26741ff',
+                                               targetLocation: 'mvn-settings.xml',
+                                               variable: 'MAVEN_SETTINGS')]) {
+                    sh 'mvn -s $MAVEN_SETTINGS deploy -f Bauserver-System-API/pom.xml'
+                }
+            }
+        }
+        stage('Deploy API Release') {
+            when {
+                branch 'master'
+            }
+            steps {
+                configFileProvider([configFile(fileId: 'a98d3b68-c3c3-41f5-a648-b70fd26741ff',
+                                               targetLocation: 'mvn-settings.xml',
+                                               variable: 'MAVEN_SETTINGS')]) {
+                    sh 'mvn -s $MAVEN_SETTINGS release -f Bauserver-System-API/pom.xml'
+                }
             }
         }
         stage('Dev deployment') {
