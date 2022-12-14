@@ -37,7 +37,7 @@ public class ItemStackBuilder {
     public ItemStackBuilder applyHeadTextures(JavaPlugin javaPlugin, String values) {
         SkullMeta skullMeta = (SkullMeta) itemMeta;
         PlayerProfile profile = javaPlugin.getServer().createProfile(UUID.randomUUID());
-        profile.setProperty(new ProfileProperty("textures", values));
+        profile.setProperty(new ProfileProperty("textures", values == null ? "" : values));
         skullMeta.setPlayerProfile(profile);
         this.itemStack.setItemMeta(skullMeta);
         this.itemMeta = skullMeta;

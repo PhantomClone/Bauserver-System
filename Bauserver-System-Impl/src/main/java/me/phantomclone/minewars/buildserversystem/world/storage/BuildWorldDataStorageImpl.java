@@ -31,21 +31,20 @@ public record BuildWorldDataStorageImpl(JavaPlugin javaPlugin, BuilderStorage bu
                 QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()
                         .query("SELECT worldName, gameType, worldCreatorUuid, created FROM BuildWorld WHERE worldUuid=? LIMIT=1"),
                 QueryBuilder.builder(dataSource).defaultConfig()
-                        .query("INSERT INTO BuildWorld(worldUuid, worldName, gameType, worldCreatorUuid, created) VALUES(?, ?, ?, ?)"),
+                        .query("INSERT INTO BuildWorld(worldUuid, worldName, gameType, worldCreatorUuid, created) VALUES(?, ?, ?, ?, ?)"),
                 QueryBuilder.builder(dataSource).defaultConfig()
                         .query("DELETE FROM BuildWorld WHERE worldUuid=?"),
                 QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()
-                        .query("SELECT worldUuid, worldName, worldCreatorUuid, created FROM BuildWorld"),
+                        .query("SELECT worldUuid, worldName, gameType, worldCreatorUuid, created FROM BuildWorld"),
                 QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()
-                        .query("SELECT bw.worldUuid, bw.worldName, bw.gameType, bw.worldCreatorUuid, bw.created FROM BuildWorld bw " +
-                                "INNER JOIN (SELECT b.worldUuid FROM Builder b WHERE b.builderUuid = ?) " +
-                                "ON BuilderWorld.worldUuid = Builder.worldUuid")
+                        .query("SELECT bw.worldUuid, bw.worldName, bw.gameType, bw.worldCreatorUuid, bw.created FROM BuildWorld bw, Builder b " +
+                                "WHERE bw.worldUuid = b.worldUuid AND b.builderUuid = ?")
         );
     }
 
     @Override
     public CompletableFuture<Boolean> createTable() {
-        return createTableStatementStage.emptyParams().update().execute().thenApply(integer -> integer != 0);
+        return createTableStatementStage().emptyParams().update().execute().thenApply(integer -> integer != 0);
     }
 
     @Override

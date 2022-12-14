@@ -27,13 +27,14 @@ public record BuilderGuiImpl(JavaPlugin javaPlugin, BuilderStorage builderStorag
 
     @Override
     public void openGui(Player player, BuildWorldData buildWorldData, List<UUID> builderList) {
-        final List<Row> rowList = IntStream.range(0, (builderList.size() / 7) + (builderList.size() % 7 != 0 ? 0 : 1))
+        final List<Row> rowList = IntStream.range(0, (builderList.size() / 7) + (builderList.size() % 7 != 0 ? 1 : 0))
                 .mapToObj(rowCounter ->
                         new Row(builderList.subList(rowCounter * 7, Math.min((rowCounter + 1) * 7, builderList.size())),
                                 javaPlugin(), skinCache())).toList();
         ClickableInventory clickableInventory = new ClickableInventory(javaPlugin(), 2 + rowList.size(), Component.text("View Builders"));
         clickableInventory.destroyOnClose(true).registerListener();
         setRows(clickableInventory, 0, rowList)
+                .setFillClickableItem(new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build())
                 .setClickableItem(4, new ItemStackBuilder(Material.PLAYER_HEAD,
                         Component.text("Welten ersteller"))
                         .applyHeadTextures(javaPlugin(), skinCache().skinValueOfPlayerUuid(buildWorldData.worldCreatorUuid(), false))
@@ -82,13 +83,13 @@ public record BuilderGuiImpl(JavaPlugin javaPlugin, BuilderStorage builderStorag
         int i = 2;
         for (List<ItemStack> itemStackList : lists) {
             final int size = Math.min(itemStackList.size(), 9);
-            for (int j = 0; j < size; j++) {
-                clickableItemStackBuilder.setClickableItem(j + i*9, itemStackList.get(j), (player, clickType) -> {});
+            for (int j = 1; j < size + 1; j++) {
+                clickableItemStackBuilder.setClickableItem(j + i*9, itemStackList.get(j - 1), (player, clickType) -> {});
             }
             ++i;
         }
         if (scroller > 0) {
-            clickableItemStackBuilder.setClickableItem(17,
+            clickableItemStackBuilder.setClickableItem(16,
                     new ItemStackBuilder(Material.PLAYER_HEAD, Component.text("Scroll Up"))
                     .applyHeadTextures(javaPlugin(), SCROLL_UP_SKIN_VALUE).build(),
                     (player, click) -> setRows(
@@ -96,7 +97,7 @@ public record BuilderGuiImpl(JavaPlugin javaPlugin, BuilderStorage builderStorag
             );
         }
         if (rowList.size() - scroller > 5) {
-            clickableItemStackBuilder.setClickableItem(17,
+            clickableItemStackBuilder.setClickableItem(40,
                     new ItemStackBuilder(Material.PLAYER_HEAD, Component.text("Scroll Up"))
                             .applyHeadTextures(javaPlugin(), SCROLL_DOWN_SKIN_VALUE).build(),
                     (player, click) -> setRows(

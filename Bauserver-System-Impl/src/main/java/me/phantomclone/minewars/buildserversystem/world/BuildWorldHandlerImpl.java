@@ -37,9 +37,9 @@ public record BuildWorldHandlerImpl(JavaPlugin javaPlugin, List<BuildWorld> load
                 new BuildWorldStorageHardDrive(javaPlugin)
         );
         try {
-            buildWorldDataStorage.createTable().get();
-            builderStorage.createTable().get();
-            buildWorldStorage.createTable().get();
+            buildWorldDataStorage().createTable().get();
+            builderStorage().createTable().get();
+            buildWorldStorage().createTable().get();
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
