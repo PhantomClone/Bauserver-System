@@ -1,0 +1,30 @@
+InventorySize: 27
+Modus:
+  Minewar:
+    Displayname:
+      - 'M'
+      - 'inewar'
+    Displaycolors:
+      - 170
+      - 5592575
+    ShortName: 'MW'
+    Slot: 11
+    Material: 'IRON_SWORD'
+  NoModus:
+    Displayname:
+      - 'Kein Modus wählen'
+    Displaycolors:
+      - 16733525
+    ShortName: 'NM'
+    Slot: 13
+    Material: 'BARRIER'
+  Pirates:
+    Displayname:
+      - 'P'
+      - 'irates'
+    Displaycolors:
+      - 11141120
+      - 16733525
+    ShortName: 'P'
+    Slot: 15
+    Material: 'FIRE_CHARGE'

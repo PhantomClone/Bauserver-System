@@ -1,0 +1,8 @@
+main: me.phantomclone.minewars.buildserversystem.BuildServerPluginImpl
+name: BuildServerSystem
+api-version: 1.19
+version: 1.0
+commands:
+  buildsystem:
+    permission: 'buildsystem.builder'
+    description: 'Open main gui'
