@@ -94,7 +94,7 @@ public class BuildWorldStorageHardDrive implements BuildWorldStorage {
 
     private void createZipFile(File worldFolder, File zipFile, CompletableFuture<Boolean> completableFuture) {
         try {
-            if (zipFile.createNewFile())
+            if (!zipFile.createNewFile())
                 throw new IOException("Cant create Zip file");
         } catch (IOException ioException) {
             ioException.printStackTrace();
