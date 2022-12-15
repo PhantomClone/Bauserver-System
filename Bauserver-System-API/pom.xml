@@ -17,4 +17,21 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>gitea</id>
+            <url>https://gitea.minewars.net/api/packages/Minecraft/maven</url>
+        </repository>
+    </repositories>
+    <distributionManagement>
+        <repository>
+            <id>gitea</id>
+            <url>https://gitea.minewars.net/api/packages/Minecraft/maven</url>
+        </repository>
+        <snapshotRepository>
+            <id>gitea</id>
+            <url>https://gitea.minewars.net/api/packages/Minecraft/maven</url>
+        </snapshotRepository>
+    </distributionManagement>
+
 </project>
