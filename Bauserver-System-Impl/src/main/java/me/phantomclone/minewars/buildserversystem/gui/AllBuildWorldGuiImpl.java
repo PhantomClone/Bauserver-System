@@ -1,6 +1,7 @@
 package me.phantomclone.minewars.buildserversystem.gui;
 
 import me.phantomclone.minewars.buildserversystem.BuildServerPlugin;
+import me.phantomclone.minewars.buildserversystem.gametype.GameTyp;
 import me.phantomclone.minewars.buildserversystem.skincache.SkinCache;
 import me.phantomclone.minewars.buildserversystem.world.storage.BuildWorldData;
 import net.kyori.adventure.text.Component;
@@ -10,7 +11,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -116,13 +116,12 @@ public record AllBuildWorldGuiImpl(BuildServerPlugin buildServerPlugin, SkinCach
 
     private record Row(List<ItemStack> builderItemStackList) {
 
-        private Row(List<BuildWorldData> builderList, JavaPlugin javaPlugin, SkinCache skinCache, NamespacedKey buildWorldNameSpace) {
+        private Row(List<BuildWorldData> builderList, BuildServerPlugin buildServerPlugin, SkinCache skinCache, NamespacedKey buildWorldNameSpace) {
             this(builderList.stream()
-                    .map(buildWorldData -> new ItemStackBuilder(Material.PLAYER_HEAD,
+                    .map(buildWorldData -> new ItemStackBuilder(buildServerPlugin.gameTypRegistry().gameTypeList().stream()
+                            .filter(gameTyp -> gameTyp.shortName().equals(buildWorldData.gameType())).map(GameTyp::material).findFirst().orElse(Material.PLAYER_HEAD),
                             Component.text(buildWorldData.worldName()))
                             .applyNBTData(buildWorldNameSpace, new PersistentDataTypeBuildWorldData(), buildWorldData)
-                            .applyHeadTextures(javaPlugin, skinCache.skinValueOfPlayerUuid(buildWorldData.worldCreatorUuid(),
-                                    false))
                             .build()).toList()
             );
         }
