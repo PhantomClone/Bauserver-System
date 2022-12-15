@@ -60,7 +60,7 @@ public record AllBuildWorldGuiImpl(BuildServerPlugin buildServerPlugin, SkinCach
 
         return setRows(clickableInventory, 0, rowList)
                 .setFillClickableItem(new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build())
-                .setClickableItem((rowList.size() + 2) * 9 - 8, new ClickableItemStack(
+                .setClickableItem((rowList.size() + 2) * 9 - 9, new ClickableItemStack(
                         new ItemStackBuilder(Material.PLAYER_HEAD, Component.text("Zurück")
                                 .color(TextColor.color(16733525)))
                                 .applyHeadTextures(this.buildServerPlugin, MHF_ARROW_LEFT).build(),
@@ -71,7 +71,7 @@ public record AllBuildWorldGuiImpl(BuildServerPlugin buildServerPlugin, SkinCach
 
     private void clickWorldItemStack(Player player, ItemStack itemStack) {
         final ItemMeta itemMeta = itemStack.getItemMeta();
-        if (itemMeta == null || !itemMeta.hasLore() || !itemMeta.getPersistentDataContainer().has(buildWorldNameSpaceKey()))
+        if (itemMeta == null || !itemMeta.getPersistentDataContainer().has(buildWorldNameSpaceKey()))
             return;
         //TODO CHECK WORK
         final BuildWorldData buildWorldData = itemMeta.getPersistentDataContainer().get(buildWorldNameSpaceKey(), new PersistentDataTypeBuildWorldData());

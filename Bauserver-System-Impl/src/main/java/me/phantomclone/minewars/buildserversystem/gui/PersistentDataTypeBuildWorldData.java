@@ -26,7 +26,7 @@ public class PersistentDataTypeBuildWorldData implements PersistentDataType<byte
     public byte @NotNull [] toPrimitive(@NotNull BuildWorldData buildWorldData, @NotNull PersistentDataAdapterContext persistentDataAdapterContext) {
         final byte[] nameBytes = buildWorldData.worldName().getBytes(StandardCharsets.UTF_8);
         final byte[] typeByte = buildWorldData.gameType().getBytes(StandardCharsets.UTF_8);
-        final ByteBuffer byteBuffer = ByteBuffer.allocate(8 + 8 + 4 + nameBytes.length + 4 + typeByte.length + 8);
+        final ByteBuffer byteBuffer = ByteBuffer.allocate(16 + 16 + 4 + nameBytes.length + 4 + typeByte.length + 8);
         byteBuffer.put(UUIDConverter.convert(buildWorldData.worldUuid()));
         byteBuffer.put(UUIDConverter.convert(buildWorldData.worldCreatorUuid()));
         byteBuffer.putInt(nameBytes.length);
@@ -40,7 +40,7 @@ public class PersistentDataTypeBuildWorldData implements PersistentDataType<byte
     @Override
     public @NotNull BuildWorldDataImpl fromPrimitive(byte @NotNull [] bytes, @NotNull PersistentDataAdapterContext persistentDataAdapterContext) {
         final ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
-        final byte[] uuidBuffer = new byte[8];
+        final byte[] uuidBuffer = new byte[16];
         byteBuffer.get(uuidBuffer);
         final UUID worldUuid = UUIDConverter.convert(uuidBuffer);
         byteBuffer.get(uuidBuffer);
