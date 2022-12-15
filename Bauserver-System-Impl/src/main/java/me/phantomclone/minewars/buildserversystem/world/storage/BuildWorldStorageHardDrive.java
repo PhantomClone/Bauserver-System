@@ -1,7 +1,10 @@
 package me.phantomclone.minewars.buildserversystem.world.storage;
 
 import me.phantomclone.minewars.buildserversystem.world.BuildWorld;
+import me.phantomclone.minewars.buildserversystem.world.BuildWorldImpl;
 import org.apache.commons.io.FileUtils;
+import org.bukkit.World;
+import org.bukkit.WorldCreator;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
@@ -10,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -49,21 +53,27 @@ public class BuildWorldStorageHardDrive implements BuildWorldStorage {
                     completableFuture.complete(null);
                     return;
                 }
-                extractZip(new File(javaPlugin.getDataFolder(), String.format("%s.zip", worldFolder.getName())));
             }
+            extractZip(new File(javaPlugin.getDataFolder(), String.format("%s.zip", worldFolder.getName())), worldFolder);
+            javaPlugin.getServer().getScheduler().runTask(javaPlugin, () -> {
+                final World world = new WorldCreator(buildWorldData.worldUuid().toString()).createWorld();
+                completableFuture.complete(new BuildWorldImpl(
+                        buildWorldData,
+                        new HashSet<>(builderList),
+                        world
+                ));
+            });
         });
         return completableFuture;
     }
 
-    private void extractZip(File zipFile) {
-        int length = zipFile.getName().length();
-        final String worldName = zipFile.getName().substring(length - 4, length);
+    private void extractZip(File zipFile, File worldFolder) {
         try (FileInputStream fileInputStream = new FileInputStream(zipFile);
              ZipInputStream zipInputStream = new ZipInputStream(fileInputStream)) {
             ZipEntry entry;
             byte[] buffer = new byte[1024];
             while ((entry = zipInputStream.getNextEntry()) != null) {
-                File file = new File(worldName, entry.getName());
+                File file = new File(worldFolder, entry.getName());
                 if (entry.isDirectory()) {
                     file.mkdirs();
                     continue;
@@ -94,6 +104,8 @@ public class BuildWorldStorageHardDrive implements BuildWorldStorage {
 
     private void createZipFile(File worldFolder, File zipFile, CompletableFuture<Boolean> completableFuture) {
         try {
+            if (zipFile.exists() && !zipFile.delete())
+                throw new IOException("Cant delete existing zip file.");
             if (!zipFile.createNewFile())
                 throw new IOException("Cant create Zip file");
         } catch (IOException ioException) {
