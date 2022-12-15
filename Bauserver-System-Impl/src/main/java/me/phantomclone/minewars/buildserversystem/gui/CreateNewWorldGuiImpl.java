@@ -76,7 +76,13 @@ public record CreateNewWorldGuiImpl(BuildServerPlugin buildServerPlugin, Map<Pla
                                 .color(TextColor.color(16733525)));
                     else
                         firstNext(player, buildWorldCreator);
-                }), buildWorldCreator).openInventory(player);
+                }
+        ).setClickableItem(18, new ItemStackBuilder(Material.PLAYER_HEAD, Component.text("Zurück")
+                        .color(TextColor.color(16733525)))
+                        .applyHeadTextures(this.buildServerPlugin, MHF_ARROW_LEFT).build(),
+                        (clickedPlayer, clickType) -> buildServerPlugin.guiHandler()
+                                .buildSystemGui().openGui(clickedPlayer, clickedPlayer.hasPermission("builder.headbuilder")))
+                , buildWorldCreator).openInventory(player);
     }
 
     private ClickableInventory applyWorldType(WorldType worldType, ClickableInventory.ClickableItemStackBuilder clickableItemStackBuilder,
