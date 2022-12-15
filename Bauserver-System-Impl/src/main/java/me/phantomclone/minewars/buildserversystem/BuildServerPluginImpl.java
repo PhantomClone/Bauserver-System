@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import de.chojo.sqlutil.databases.SqlType;
 import de.chojo.sqlutil.datasource.DataSourceCreator;
 import me.phantomclone.minewars.buildserversystem.commands.BuildSystemCommand;
+import me.phantomclone.minewars.buildserversystem.commands.GameModeCommand;
 import me.phantomclone.minewars.buildserversystem.gametype.GameTypRegistry;
 import me.phantomclone.minewars.buildserversystem.gametype.GameTypRegistryImpl;
 import me.phantomclone.minewars.buildserversystem.gui.GuiHandler;
@@ -55,9 +56,12 @@ public class BuildServerPluginImpl extends BuildServerPlugin {
         this.skinCache = new SkinCacheImpl(this);
         this.buildWorldHandler = new BuildWorldHandlerImpl(this, build);
         this.guiHandler = new GuiHandlerImpl(this, buildWorldHandler.builderStorage(), this.skinCache);
-        final PluginCommand buildsystem = getCommand("buildsystem");
-        if (buildsystem != null)
-            buildsystem.setExecutor(new BuildSystemCommand(this.guiHandler));
+        final PluginCommand buildSystem = getCommand("buildsystem");
+        if (buildSystem != null)
+            buildSystem.setExecutor(new BuildSystemCommand(this.guiHandler));
+        final PluginCommand gameModeCommand = getCommand("gamemode");
+        if (gameModeCommand != null)
+            gameModeCommand.setExecutor(new GameModeCommand());
 
     }
 

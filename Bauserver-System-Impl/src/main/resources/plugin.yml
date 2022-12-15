@@ -6,3 +6,12 @@ commands:
   buildsystem:
     permission: 'buildsystem.builder'
     description: 'Open main gui'
+  gamemode:
+    permission: 'buildsystem.builder'
+    description: 'Change your gamemode'
+    aliases:
+      - 0
+      - 1
+      - 2
+      - gm
+    usage: 'use /gamemode <0|1|2>'
