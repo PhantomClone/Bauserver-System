@@ -31,16 +31,25 @@ public record AllBuildWorldGuiImpl(BuildServerPlugin buildServerPlugin, SkinCach
     public void openGui(Player player, Consumer<Boolean> successConsumer) {
         buildServerPlugin().worldHandler().buildWorldDataStorage().buildWorldDataList()
                 .whenComplete((buildWorldDataList, throwable) ->
-                            runSync(() -> generateInventory(buildWorldDataList, false)
-                                    .openInventory(player))
+                            openGui(player, successConsumer, buildWorldDataList, true)
                 );
+    }
+
+    @Override
+    public void openGui(Player player, Consumer<Boolean> successConsumer, List<BuildWorldData> buildWorldDataList, boolean query) {
+        if (buildServerPlugin().getServer().isPrimaryThread())
+            generateInventory(buildWorldDataList, query)
+                    .openInventory(player);
+        else
+            runSync(() -> generateInventory(buildWorldDataList, query)
+                .openInventory(player));
     }
 
     @Override
     public void openGuiForBuilder(Player player, Consumer<Boolean> successConsumer) {
         buildServerPlugin().worldHandler().buildWorldDataStorage().buildWorldDataListOfBuilder(player.getUniqueId())
                 .whenComplete((buildWorldDataList, throwable) ->
-                            runSync(() -> generateInventory(buildWorldDataList, true)
+                            runSync(() -> generateInventory(buildWorldDataList, false)
                                     .openInventory(player))
                 );
     }
@@ -57,6 +66,14 @@ public record AllBuildWorldGuiImpl(BuildServerPlugin buildServerPlugin, SkinCach
         final ClickableInventory clickableInventory = new ClickableInventory(buildServerPlugin(), (rowList.size() + 2) * 9,
                 Component.text("Bauwelten"));
         clickableInventory.destroyOnClose(true).registerListener();
+
+        if (query)
+            clickableInventory.updateInventory().setClickableItem((rowList.size() + 2) * 9 - 5,
+                    new ClickableItemStack(new ItemStackBuilder(Material.OAK_SIGN, Component.text("Suche nach...")).build(),
+                            (player, clickType) -> buildServerPlugin.guiHandler().queryGui()
+                                    .open(player, null, null, null,
+                                            close -> clickableInventory.registerListener().openInventory(player)))
+                    ).applyUpdate();
 
         return setRows(clickableInventory, 0, rowList)
                 .setFillClickableItem(new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build())

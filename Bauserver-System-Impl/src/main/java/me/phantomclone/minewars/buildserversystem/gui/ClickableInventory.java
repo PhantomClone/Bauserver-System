@@ -42,6 +42,7 @@ public class ClickableInventory implements Listener {
         this.integerClickableItemStackMap = new HashMap<>();
         this.inventory = javaPlugin.getServer().createInventory(null, inventorySize, inventoryName);
         this.fillClickableItemStack = new ClickableItemStack(new ItemStack(Material.AIR), (player, clickType) -> {});
+        this.destroyOnClose = true;
     }
 
     @EventHandler

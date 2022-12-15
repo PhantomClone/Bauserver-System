@@ -8,4 +8,6 @@ public interface GuiHandler {
     WorldSettingsGui worldSettingsGui();
     CreateNewWorldGui createNewWorldGui();
 
+    QueryGui queryGui();
+
 }

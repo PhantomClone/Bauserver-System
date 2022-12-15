@@ -18,4 +18,6 @@ public interface BuildWorldDataStorage {
     CompletableFuture<List<BuildWorldData>> buildWorldDataList();
     CompletableFuture<List<BuildWorldData>> buildWorldDataListOfBuilder(UUID builderUuid);
 
+    CompletableFuture<List<BuildWorldData>> buildWorldDataListWithFilter(String shortGameType, UUID builderUuid, String worldName);
+
 }

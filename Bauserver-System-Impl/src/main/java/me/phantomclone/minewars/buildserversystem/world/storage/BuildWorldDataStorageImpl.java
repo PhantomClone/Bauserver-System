@@ -2,6 +2,7 @@ package me.phantomclone.minewars.buildserversystem.world.storage;
 
 import de.chojo.sqlutil.conversion.UUIDConverter;
 import de.chojo.sqlutil.wrapper.QueryBuilder;
+import de.chojo.sqlutil.wrapper.stage.ResultStage;
 import de.chojo.sqlutil.wrapper.stage.StatementStage;
 import me.phantomclone.minewars.buildserversystem.world.BuildWorld;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -19,7 +20,15 @@ public record BuildWorldDataStorageImpl(JavaPlugin javaPlugin, BuilderStorage bu
                                     StatementStage<?> insertBuildWorldStatementStage,
                                     StatementStage<?> deleteBuildWorldStatementStage,
                                     StatementStage<BuildWorldData> buildWorldDataListStatementStage,
-                                    StatementStage<BuildWorldData> buildWorldDataListOfBuilderStatementStage)
+                                    StatementStage<BuildWorldData> buildWorldDataListOfBuilderStatementStage,
+                                    StatementStage<BuildWorldData> buildWorldDataListOfShortNameStatementStage,
+                                    StatementStage<BuildWorldData> buildWorldDataListOfWorldNameStatementStage,
+                                    StatementStage<BuildWorldData> buildWorldDataListOfBuilderShortNameStatementStage,
+                                    StatementStage<BuildWorldData> buildWorldDataListOfBuilderWorldNameStatementStage,
+                                    StatementStage<BuildWorldData> buildWorldDataListOfWorldNameShortNameStatementStage,
+                                    StatementStage<BuildWorldData> buildWorldDataListOfWorldNameShortNameBuilderStatementStage
+
+)
         implements BuildWorldDataStorage {
 
     public BuildWorldDataStorageImpl(JavaPlugin javaPlugin, DataSource dataSource, BuilderStorage builderStorage) {
@@ -38,7 +47,22 @@ public record BuildWorldDataStorageImpl(JavaPlugin javaPlugin, BuilderStorage bu
                         .query("SELECT worldUuid, worldName, gameType, worldCreatorUuid, created FROM BuildWorld"),
                 QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()
                         .query("SELECT bw.worldUuid, bw.worldName, bw.gameType, bw.worldCreatorUuid, bw.created FROM BuildWorld bw, Builder b " +
-                                "WHERE bw.worldUuid = b.worldUuid AND b.builderUuid = ?")
+                                "WHERE bw.worldUuid = b.worldUuid AND b.builderUuid = ?"),
+                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()//TODO SHORTNAME
+                        .query("SELECT worldUuid, worldName, gameType, worldCreatorUuid, created FROM BuildWorld WHERE gameType=?"),
+                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()//TODO WORLDNAME
+                        .query("SELECT worldUuid, worldName, gameType, worldCreatorUuid, created FROM BuildWorld WHERE worldName=?"),
+                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()//TODO BUILDER SHORTNAME
+                        .query("SELECT bw.worldUuid, bw.worldName, bw.gameType, bw.worldCreatorUuid, bw.created FROM BuildWorld bw, Builder b " +
+                                "WHERE bw.gameType=? AND bw.worldUuid = b.worldUuid AND b.builderUuid = ?"),
+                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()//TODO BUILDER WORLDNAME
+                        .query("SELECT bw.worldUuid, bw.worldName, bw.gameType, bw.worldCreatorUuid, bw.created FROM BuildWorld bw, Builder b " +
+                                "WHERE bw.worldName=? AND bw.worldUuid = b.worldUuid AND b.builderUuid = ?"),
+                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()//TODO SHORTNAME WORLDNAME
+                        .query("SELECT worldUuid, worldName, gameType, worldCreatorUuid, created FROM BuildWorld WHERE gameType=? AND worldName=?"),
+                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()//TODO BUILDER WORLDNAME SHORTNAME
+                        .query("SELECT bw.worldUuid, bw.worldName, bw.gameType, bw.worldCreatorUuid, bw.created FROM BuildWorld bw, Builder b " +
+                                "WHERE bw.worldName=? AND bw.shortName=? AND bw.worldUuid = b.worldUuid AND b.builderUuid = ?")
         );
     }
 
@@ -101,5 +125,43 @@ public record BuildWorldDataStorageImpl(JavaPlugin javaPlugin, BuilderStorage bu
                         UUIDConverter.convert(resultSet.getBytes("worldCreatorUuid")),
                         resultSet.getTimestamp("created").getTime())
                 ).all();
+    }
+
+    @Override
+    public CompletableFuture<List<BuildWorldData>> buildWorldDataListWithFilter(String shortGameType, UUID builderUuid, String worldName) {
+        final ResultStage<BuildWorldData> buildWorldDataResultStage;
+        if (shortGameType != null && builderUuid == null && worldName == null) {
+            buildWorldDataResultStage = buildWorldDataListOfBuilderShortNameStatementStage()
+                    .paramsBuilder(paramBuilder -> paramBuilder.setString(shortGameType));
+        } else if (shortGameType == null && builderUuid != null && worldName == null) {
+            buildWorldDataResultStage = buildWorldDataListOfBuilderStatementStage()
+                    .paramsBuilder(paramBuilder -> paramBuilder.setBytes(UUIDConverter.convert(builderUuid)));
+        } else if (shortGameType == null && builderUuid == null && worldName != null) {
+            buildWorldDataResultStage = buildWorldDataListOfWorldNameStatementStage()
+                    .paramsBuilder(paramBuilder -> paramBuilder.setString(worldName));
+        } else if (shortGameType != null && builderUuid != null && worldName == null) {
+            buildWorldDataResultStage = buildWorldDataListOfBuilderShortNameStatementStage()
+                    .paramsBuilder(paramBuilder -> paramBuilder.setString(shortGameType)
+                            .setBytes(UUIDConverter.convert(builderUuid)));
+        } else if (shortGameType != null && builderUuid == null) {
+            buildWorldDataResultStage = buildWorldDataListOfWorldNameShortNameStatementStage()
+                    .paramsBuilder(paramBuilder -> paramBuilder.setString(shortGameType).setString(worldName));
+        } else if (shortGameType == null && builderUuid != null) {
+            buildWorldDataResultStage = buildWorldDataListOfBuilderWorldNameStatementStage()
+                    .paramsBuilder(paramBuilder -> paramBuilder.setString(worldName).setBytes(UUIDConverter.convert(builderUuid)));
+        } else if (shortGameType != null) {
+            buildWorldDataResultStage = buildWorldDataListOfWorldNameShortNameBuilderStatementStage()
+                    .paramsBuilder(paramBuilder -> paramBuilder.setString(worldName).setString(shortGameType)
+                            .setBytes(UUIDConverter.convert(builderUuid)));
+        } else {
+            buildWorldDataResultStage = buildWorldDataListStatementStage().emptyParams();
+        }
+        return buildWorldDataResultStage.readRow(resultSet -> new BuildWorldDataImpl(
+                UUIDConverter.convert(resultSet.getBytes("worldUuid")),
+                resultSet.getString("worldName"),
+                resultSet.getString("gameType"),
+                UUIDConverter.convert(resultSet.getBytes("worldCreatorUuid")),
+                resultSet.getTimestamp("created").getTime()
+        )).all();
     }
 }

@@ -47,7 +47,10 @@ public record SkinCacheImpl(Map<String, UUID> playerNameUuidCache, Map<UUID, Str
             ), StandardCharsets.UTF_8);
             final JSONObject jsonObject = (JSONObject) new JSONParser().parse(json);
             final String uuidString = (String) jsonObject.get("id");
-            final UUID uuid = UUID.fromString(uuidString);
+            final String uuidStringPattern = uuidString.replaceAll(
+                    "(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})",
+                    "$1-$2-$3-$4-$5");
+            final UUID uuid = UUID.fromString(uuidStringPattern);
             playerNameUuidCache().put(playerName, uuid);
             return uuid;
         } catch (IOException | ParseException e) {

@@ -5,6 +5,7 @@ import me.phantomclone.minewars.buildserversystem.skincache.SkinCache;
 import me.phantomclone.minewars.buildserversystem.world.storage.BuilderStorage;
 
 public record GuiHandlerImpl(
+        BuildServerPlugin buildServerPlugin,
         AllBuildWorldGui allBuildWorldGui,
         BuilderGui builderGui,
         BuildSystemGui buildSystemGui,
@@ -27,9 +28,14 @@ public record GuiHandlerImpl(
                           WorldSettingsGui worldSettingsGui,
                           CreateNewWorldGui createNewWorldGui) {
         this(
-                allBuildWorldGui, builderGui,
+                buildServerPlugin, allBuildWorldGui, builderGui,
                 new BuildSystemGuiImpl(buildServerPlugin, allBuildWorldGui, createNewWorldGui), worldSettingsGui,
                 createNewWorldGui
         );
+    }
+
+    @Override
+    public QueryGui queryGui() {
+        return new QueryGuiImpl(buildServerPlugin());
     }
 }
