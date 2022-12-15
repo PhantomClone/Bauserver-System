@@ -49,7 +49,7 @@ public record CreateNewWorldGuiImpl(BuildServerPlugin buildServerPlugin, Map<Pla
                         Component.text("Neue Welt erstellen")
                                 .color(TextColor.color(11184810))).destroyOnClose(true).registerListener();
         applyWorldType(buildWorldCreator.getWorldType(), clickableInventory.updateInventory().setFillClickableItem(
-                new ItemStackBuilder(Material.GLASS_PANE, Component.empty()).build()
+                new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build()
         ).setClickableItem(9,
                 new ItemStackBuilder(WorldType.FLAT.material(), Component.text("Flat")
                         .color(TextColor.color(5635925))).build(),
