@@ -1,5 +1,6 @@
 package me.phantomclone.minewars.buildserversystem;
 
+import me.phantomclone.minewars.buildserversystem.gametype.GameTypRegistry;
 import me.phantomclone.minewars.buildserversystem.gui.GuiHandler;
 import me.phantomclone.minewars.buildserversystem.skincache.SkinCache;
 import me.phantomclone.minewars.buildserversystem.world.BuildWorldHandler;
@@ -10,5 +11,7 @@ public abstract class BuildServerPlugin extends JavaPlugin {
     public abstract BuildWorldHandler worldHandler();
     public abstract SkinCache skinCache();
     public abstract GuiHandler guiHandler();
+
+    public abstract GameTypRegistry gameTypRegistry();
 
 }

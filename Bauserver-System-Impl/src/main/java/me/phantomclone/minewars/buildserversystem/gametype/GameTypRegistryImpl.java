@@ -33,7 +33,9 @@ public record GameTypRegistryImpl(int inventorySize, List<GameTyp> gameTypeList)
         final List<String> displayNames = configuration.getStringList(displayNameFormat);
         final List<Integer> displayColors = configuration.getIntegerList(displayColorFormat);
         final int slot = configuration.getInt(slotFormat);
-        final Material material = Material.getMaterial(materialFormat);
+        final String materialString = configuration.getString(materialFormat);
+        assert materialString != null;
+        final Material material = Material.getMaterial(materialString);
         final String shortName = configuration.getString(shortNameFormat);
 
         if (material == null)

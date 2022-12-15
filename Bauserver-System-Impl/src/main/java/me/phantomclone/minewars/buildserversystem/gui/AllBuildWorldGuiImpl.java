@@ -69,14 +69,15 @@ public record AllBuildWorldGuiImpl(BuildServerPlugin buildServerPlugin, SkinCach
                 )).applyUpdate();
     }
 
-    private void clickWorldItemStack(Player player, ItemStack itemStack) {
+    private void clickWorldItemStack(Player player, ItemStack itemStack, ClickableInventory clickableInventory) {
         final ItemMeta itemMeta = itemStack.getItemMeta();
         if (itemMeta == null || !itemMeta.getPersistentDataContainer().has(buildWorldNameSpaceKey()))
             return;
-        //TODO CHECK WORK
         final BuildWorldData buildWorldData = itemMeta.getPersistentDataContainer().get(buildWorldNameSpaceKey(), new PersistentDataTypeBuildWorldData());
-        buildServerPlugin().guiHandler().worldSettingsGui().openGui(player, buildWorldData);
+        buildServerPlugin().guiHandler().worldSettingsGui().openGui(player, buildWorldData,
+                backPlayer -> clickableInventory.registerListener().openInventory(player));
     }
+
     private ClickableInventory.ClickableItemStackBuilder setRows(ClickableInventory clickableInventory,
                                                                  int scroller, List<Row> rowList) {
         //TODO maybe -> interface + add in row clickconsumer...
@@ -89,7 +90,7 @@ public record AllBuildWorldGuiImpl(BuildServerPlugin buildServerPlugin, SkinCach
             for (int j = 1; j < size + 1; j++) {
                 final ItemStack itemStack = itemStackList.get(j - 1);
                 clickableItemStackBuilder.setClickableItem(j + i*9, itemStack, (player, clickType) ->
-                                clickWorldItemStack(player, itemStack)
+                                clickWorldItemStack(player, itemStack, clickableInventory)
                 );
             }
             ++i;

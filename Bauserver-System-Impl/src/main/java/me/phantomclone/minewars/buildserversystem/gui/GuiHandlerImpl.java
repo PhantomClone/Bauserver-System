@@ -17,7 +17,7 @@ public record GuiHandlerImpl(
                 buildServerPlugin,
                 new AllBuildWorldGuiImpl(buildServerPlugin, skinCache),
                 new BuilderGuiImpl(buildServerPlugin, builderStorage, skinCache),
-                new WorldSettingsGuiImpl(),
+                new WorldSettingsGuiImpl(buildServerPlugin),
                 new CreateNewWorldGuiImpl(buildServerPlugin)
         );
     }

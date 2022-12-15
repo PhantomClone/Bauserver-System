@@ -64,7 +64,7 @@ public record BuilderStorageImpl(StatementStage<?> createTableStatementStage,
 
     @Override
     public CompletableFuture<List<UUID>> builderUuidOfWorld(UUID worldUuid) {
-        return worldUuidOfBuilderStatementStage()
+        return builderUuidOfWorldStatementStage()
                 .paramsBuilder(paramBuilder -> paramBuilder.setBytes(UUIDConverter.convert(worldUuid)))
                 .readRow(resultSet -> UUIDConverter.convert(resultSet.getBytes("builderUuid")))
                 .all();
