@@ -59,7 +59,7 @@ public class BuildServerPluginImpl extends BuildServerPlugin {
         return skinCache;
     }
 
-//    @Override
+    @Override
     public GuiHandler guiHandler() {
         return guiHandler;
     }

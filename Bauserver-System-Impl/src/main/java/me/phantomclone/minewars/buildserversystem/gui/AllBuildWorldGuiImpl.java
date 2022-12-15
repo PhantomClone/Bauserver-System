@@ -4,23 +4,28 @@ import me.phantomclone.minewars.buildserversystem.BuildServerPlugin;
 import me.phantomclone.minewars.buildserversystem.skincache.SkinCache;
 import me.phantomclone.minewars.buildserversystem.world.storage.BuildWorldData;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
-public record AllBuildWorldGuiImpl(BuildServerPlugin buildServerPlugin, SkinCache skinCache) implements AllBuildWorldGui {
+public record AllBuildWorldGuiImpl(BuildServerPlugin buildServerPlugin, SkinCache skinCache, NamespacedKey buildWorldNameSpaceKey) implements AllBuildWorldGui {
 
     private static final String SCROLL_UP_SKIN_VALUE = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOWNkYjhmNDM2NTZjMDZjNGU4NjgzZTJlNjM0MWI0NDc5ZjE1N2Y0ODA4MmZlYTRhZmYwOWIzN2NhM2M2OTk1YiJ9fX0=";
     private static final String SCROLL_DOWN_SKIN_VALUE = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNjFlMWU3MzBjNzcyNzljOGUyZTE1ZDhiMjcxYTExN2U1ZTJjYTkzZDI1YzhiZTNhMDBjYzkyYTAwY2MwYmI4NSJ9fX0=";
+    private final static String MHF_ARROW_LEFT = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYmQ2OWUwNmU1ZGFkZmQ4NGU1ZjNkMWMyMTA2M2YyNTUzYjJmYTk0NWVlMWQ0ZDcxNTJmZGM1NDI1YmMxMmE5In19fQ==";
 
+
+    public AllBuildWorldGuiImpl(BuildServerPlugin buildServerPlugin, SkinCache skinCache) {
+        this(buildServerPlugin, skinCache, new NamespacedKey(buildServerPlugin, "buildworlddata"));
+    }
 
     @Override
     public void openGui(Player player, Consumer<Boolean> successConsumer) {
@@ -48,31 +53,29 @@ public record AllBuildWorldGuiImpl(BuildServerPlugin buildServerPlugin, SkinCach
         final List<Row> rowList = IntStream.range(0, (buildWorldDataList.size() / 7) + (buildWorldDataList.size() % 7 != 0 ? 1 : 0))
                 .mapToObj(rowCounter ->
                         new Row(buildWorldDataList.subList(rowCounter * 7, Math.min((rowCounter + 1) * 7, buildWorldDataList.size())),
-                                buildServerPlugin(), skinCache())).toList();
+                                buildServerPlugin(), skinCache(), buildWorldNameSpaceKey())).toList();
         final ClickableInventory clickableInventory = new ClickableInventory(buildServerPlugin(), (rowList.size() + 2) * 9,
                 Component.text("Bauwelten"));
         clickableInventory.destroyOnClose(true).registerListener();
 
         return setRows(clickableInventory, 0, rowList)
                 .setFillClickableItem(new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build())
-                .applyUpdate();
+                .setClickableItem((rowList.size() + 2) * 9 - 8, new ClickableItemStack(
+                        new ItemStackBuilder(Material.PLAYER_HEAD, Component.text("Zurück")
+                                .color(TextColor.color(16733525)))
+                                .applyHeadTextures(this.buildServerPlugin, MHF_ARROW_LEFT).build(),
+                        (player, clickType) -> buildServerPlugin().guiHandler().buildSystemGui()
+                                .openGui(player, player.hasPermission("builder.headbuilder"))
+                )).applyUpdate();
     }
 
     private void clickWorldItemStack(Player player, ItemStack itemStack) {
         final ItemMeta itemMeta = itemStack.getItemMeta();
-        if (itemMeta == null || !itemMeta.hasLore())
+        if (itemMeta == null || !itemMeta.hasLore() || !itemMeta.getPersistentDataContainer().has(buildWorldNameSpaceKey()))
             return;
-        itemMeta.lore().stream()
-                .filter(component -> component instanceof TextComponent)
-                .map(component -> (TextComponent) component)
-                .filter(component -> component.content().contains("World Uuid: "))
-                .findFirst()
-                .map(component -> component.children().get(0))
-                .filter(component -> component instanceof TextComponent)
-                .map(component -> (TextComponent) component)
-                .map(TextComponent::content)
-                .map(UUID::fromString)
-                .ifPresent(worldUuid -> player.sendMessage(worldUuid.toString()));
+        //TODO CHECK WORK
+        final BuildWorldData buildWorldData = itemMeta.getPersistentDataContainer().get(buildWorldNameSpaceKey(), new PersistentDataTypeBuildWorldData());
+        buildServerPlugin().guiHandler().worldSettingsGui().openGui(player, buildWorldData);
     }
     private ClickableInventory.ClickableItemStackBuilder setRows(ClickableInventory clickableInventory,
                                                                  int scroller, List<Row> rowList) {
@@ -112,11 +115,11 @@ public record AllBuildWorldGuiImpl(BuildServerPlugin buildServerPlugin, SkinCach
 
     private record Row(List<ItemStack> builderItemStackList) {
 
-        private Row(List<BuildWorldData> builderList, JavaPlugin javaPlugin, SkinCache skinCache) {
+        private Row(List<BuildWorldData> builderList, JavaPlugin javaPlugin, SkinCache skinCache, NamespacedKey buildWorldNameSpace) {
             this(builderList.stream()
                     .map(buildWorldData -> new ItemStackBuilder(Material.PLAYER_HEAD,
                             Component.text(buildWorldData.worldName()))
-                            .applyLore(Component.text("World Uuid: ").append(Component.text(buildWorldData.worldUuid().toString())))
+                            .applyNBTData(buildWorldNameSpace, new PersistentDataTypeBuildWorldData(), buildWorldData)
                             .applyHeadTextures(javaPlugin, skinCache.skinValueOfPlayerUuid(buildWorldData.worldCreatorUuid(),
                                     false))
                             .build()).toList()

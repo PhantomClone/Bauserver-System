@@ -4,9 +4,12 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
@@ -31,6 +34,12 @@ public class ItemStackBuilder {
         skullMeta.setPlayerProfile(profile);
         this.itemStack.setItemMeta(skullMeta);
         this.itemMeta = skullMeta;
+        return this;
+    }
+
+    public <T, Z> ItemStackBuilder applyNBTData(NamespacedKey key, PersistentDataType<T, Z> persistentDataType, Z value) {
+        final PersistentDataContainer persistentDataContainer = this.itemMeta.getPersistentDataContainer();
+        persistentDataContainer.set(key, persistentDataType, value);
         return this;
     }
 
