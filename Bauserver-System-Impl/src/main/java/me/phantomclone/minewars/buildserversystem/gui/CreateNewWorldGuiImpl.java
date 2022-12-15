@@ -12,7 +12,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Material;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.AnvilInventory;
@@ -20,11 +19,8 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.io.File;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public record CreateNewWorldGuiImpl(BuildServerPlugin buildServerPlugin, Map<Player, AnvilInventory> playerAnvilInventoryMap) implements CreateNewWorldGui {
 
@@ -117,9 +113,7 @@ public record CreateNewWorldGuiImpl(BuildServerPlugin buildServerPlugin, Map<Pla
     }
 
     private void firstNext(Player player, BuildWorldCreator buildWorldCreator) {
-        final YamlConfiguration configuration = YamlConfiguration.loadConfiguration(
-                new File(this.buildServerPlugin.getDataFolder(), "Spielmodus.yml"));
-        final int inventorySize = configuration.getInt("InventorySize");
+        final int inventorySize = buildServerPlugin().gameTypRegistry().inventorySize();
         final ClickableInventory clickableInventory = new ClickableInventory(this.buildServerPlugin, inventorySize,
                 Component.text("Spielmodus wählen").color(TextColor.color(11184810)))
                 .destroyOnClose(true).registerListener();
@@ -127,29 +121,14 @@ public record CreateNewWorldGuiImpl(BuildServerPlugin buildServerPlugin, Map<Pla
                 .updateInventory().setFillClickableItem(
                         new ItemStackBuilder(Material.GLASS_PANE, Component.empty()).build());
 
-        final Set<String> items = configuration.getConfigurationSection("Modus").getKeys(false);
-        items.forEach(gameType -> {
-            final List<String> displayNames = configuration.getStringList(String.format("Modus.%s.Displayname", gameType));
-            final List<Integer> displayColors = configuration.getIntegerList(String.format("Modus.%s.Displaycolors", gameType));
-            final int slot = configuration.getInt(String.format("Modus.%s.Slot", gameType));
-
-            final Material material = Material.getMaterial(configuration.getString(String.format("Modus.%s.Material", gameType)));
-            final String shortName = configuration.getString(String.format("Modus.%s.ShortName", gameType));
-            Component component = Component.empty();
-            for (int i = 0; i < displayNames.size(); i++) {
-                component = component.append(
-                        Component.text(displayNames.get(i)).color(TextColor.color(TextColor.color(displayColors.get(i)))
-                        )
-                );
-            }
-            clickableItemStackBuilder.setClickableItem(slot, new ItemStackBuilder(material, component).build(),
+        buildServerPlugin().gameTypRegistry().gameTypeList().forEach(gameType -> {
+            clickableItemStackBuilder.setClickableItem(gameType.slot(), new ItemStackBuilder(gameType.material(), gameType.displayName()).build(),
                     (otherPlayer, clickType) ->
-                            applyGameType(shortName, slot, clickableInventory.updateInventory(), buildWorldCreator)
+                            applyGameType(gameType.shortName(), gameType.slot(), clickableInventory.updateInventory(), buildWorldCreator)
             );
-            if (buildWorldCreator.getGameType() != null && buildWorldCreator.getGameType().equals(shortName)) {
-                clickableItemStackBuilder.setItemStackEnchanted(slot, true);
+            if (buildWorldCreator.getGameType() != null && buildWorldCreator.getGameType().equals(gameType.shortName())) {
+                clickableItemStackBuilder.setItemStackEnchanted(gameType.slot(), true);
             }
-
         });
         clickableItemStackBuilder.setClickableItem(inventorySize - 1,
                         new ItemStackBuilder(Material.PLAYER_HEAD, Component.text("Weiter")
