@@ -56,56 +56,98 @@ public class QueryGuiImpl implements QueryGui {
         clickableInventory.openInventory(player);
     }
 
-    public void setGameTyp(ClickableInventory clickableInventory) {
+    private void setGameTyp(ClickableInventory clickableInventory) {
         final boolean hasGameType = this.gameTyp != null;
         clickableInventory.updateInventory().setClickableItem(12,
                 new ClickableItemStack(new ItemStackBuilder(hasGameType ? gameTyp.material() : Material.BARRIER,
-                       hasGameType ? this.gameTyp.displayName() : Component.text("Click um nach einen Spiel Modus zu Filtern")).build(),
+                       hasGameType ? this.gameTyp.displayName() : Component.text("Click um nach einen Spiel Modus zu Filtern"))
+                        .applyLore(this.gameTyp == null ? Component.empty() : Component.text("Shift Click to remove Filter")).build(),
                         (player, clickType) -> {
-                    //TODO OPEN INVENTORY FOR GAMETYPE SELECTION
-                        }))
+                            if (clickType.isShiftClick() && this.gameTyp != null) {
+                                this.gameTyp = null;
+                                setGameTyp(clickableInventory);
+                            } else
+                                openGameTypInventory(player, clickableInventory);
+                        }
+                        ))
                 .applyUpdate();
     }
 
-    public void setBuilderUuid(ClickableInventory clickableInventory) {
+    private void openGameTypInventory(Player player, ClickableInventory clickableInventory) {
+        final ClickableInventory.ClickableItemStackBuilder clickableItemStackBuilder =
+                new ClickableInventory(buildServerPlugin, buildServerPlugin.gameTypRegistry().inventorySize(),
+                Component.text("Such nach GameModus")).destroyOnClose(true).registerListener()
+                .updateInventory();
+        for (GameTyp typ : buildServerPlugin.gameTypRegistry().gameTypeList()) {
+            clickableItemStackBuilder.setClickableItem(typ.slot(),
+                    new ItemStackBuilder(typ.material(), typ.displayName()).build(),
+                    (clickedPlayer, clickType) -> {
+                this.gameTyp = typ;
+                setGameTyp(clickableInventory);
+                clickableInventory.registerListener().openInventory(clickedPlayer);
+                    });
+        }
+        clickableItemStackBuilder.setClickableItem(buildServerPlugin.gameTypRegistry().inventorySize() - 8,
+                        new ItemStackBuilder(Material.BARRIER, Component.text("Nichts")).build(),
+                        (clickedPlayer, clickType) -> {
+                            this.gameTyp = null;
+                            setGameTyp(clickableInventory);
+                            clickableInventory.registerListener().openInventory(clickedPlayer);
+                        })
+                .applyUpdate().registerListener().openInventory(player);
+    }
+
+    private void setBuilderUuid(ClickableInventory clickableInventory) {
         final boolean hasBuilder = this.builderUuid != null;
         final ItemStack itemStack = hasBuilder ? new ItemStackBuilder(Material.PLAYER_HEAD, Component.text("Welten von ")
                 .append(Component.text(buildServerPlugin.skinCache().playerNameOfPlayerUuid(builderUuid, false))))
                 .applyHeadTextures(buildServerPlugin, buildServerPlugin.skinCache().skinValueOfPlayerUuid(builderUuid, false))
-                .build() : new ItemStackBuilder(Material.BARRIER, Component.text("Click um nach einem Builder zu filtern")).build();
+                .applyLore(Component.text("Shift Click to remove Filter")).build() :
+                new ItemStackBuilder(Material.BARRIER, Component.text("Click um nach einem Builder zu filtern")).build();
         clickableInventory.updateInventory().setClickableItem(13,
                 new ClickableItemStack(itemStack,
-                        (player, clickType) ->
-                            new AnvilGUI.Builder().text("BuildName or Empty")
+                        (player, clickType) -> {
+                    if (clickType.isShiftClick() && this.builderUuid != null) {
+                        this.builderUuid = null;
+                        setBuilderUuid(clickableInventory);
+                    } else
+                            new AnvilGUI.Builder().text("Builder Name")
                                     .plugin(buildServerPlugin)
                                     .onComplete((closedPlayer, string) -> {
                                         if (string.isEmpty() || string.isBlank())
-                                            builderUuid = null;
+                                            this.builderUuid = null;
                                         else
-                                            builderUuid = buildServerPlugin.skinCache().playerUuidOfPlayerName(string, false);
+                                            this.builderUuid = this.buildServerPlugin.skinCache().playerUuidOfPlayerName(string, false);
                                         return AnvilGUI.Response.close();
                                     })
                                     .onClose(closedPlayer -> {
                                         setBuilderUuid(clickableInventory);
                                         clickableInventory.registerListener().openInventory(player);
                                     })
-                                    .open(player)
+                                    .open(player);
+                        }
                         ))
                 .applyUpdate();
     }
 
-    public void setWorldName(ClickableInventory clickableInventory) {
+    private void setWorldName(ClickableInventory clickableInventory) {
         final boolean hasWorldName = this.worldName != null;
 
         final ItemStack itemStack = hasWorldName ? new ItemStackBuilder(Material.PLAYER_HEAD, Component.text("Weltenname: ")
                 .append(Component.text(this.worldName)))
                 .applyHeadTextures(buildServerPlugin, WORLD_SKIN_DATA)
-                .build() : new ItemStackBuilder(Material.BARRIER, Component.text("Click um nach einem Weltennamen zu filtern")).build();
+                .applyLore(Component.text("Shift Click to remove Filter")).build()
+                : new ItemStackBuilder(Material.BARRIER, Component.text("Click um nach einem Weltennamen zu filtern"))
+                .build();
 
         clickableInventory.updateInventory().setClickableItem(14,
                 new ClickableItemStack(itemStack,
-                        (player, clickType) ->
-                            new AnvilGUI.Builder().text("WorldName or Empty")
+                        (player, clickType) -> {
+                            if (clickType.isShiftClick() && this.worldName != null) {
+                                this.worldName = null;
+                                setBuilderUuid(clickableInventory);
+                            } else
+                                new AnvilGUI.Builder().text("WorldName or Empty")
                                     .plugin(buildServerPlugin)
                                     .onComplete((closedPlayer, string) -> {
                                         if (string.isEmpty() || string.isBlank())
@@ -118,7 +160,8 @@ public class QueryGuiImpl implements QueryGui {
                                         setWorldName(clickableInventory);
                                         clickableInventory.registerListener().openInventory(player);
                                     })
-                                    .open(player)
+                                    .open(player);
+                        }
                         ))
                 .applyUpdate();
     }
