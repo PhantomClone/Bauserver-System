@@ -1,5 +1,6 @@
 package me.phantomclone.minewars.buildserversystem.gui;
 
+import de.chojo.sqlutil.conversion.UUIDConverter;
 import me.phantomclone.minewars.buildserversystem.BuildServerPlugin;
 import me.phantomclone.minewars.buildserversystem.skincache.SkinCache;
 import me.phantomclone.minewars.buildserversystem.world.storage.BuildWorldData;
@@ -8,8 +9,11 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
@@ -18,11 +22,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
-public record BuilderGuiImpl(BuildServerPlugin buildServerPlugin, BuilderStorage builderStorage, SkinCache skinCache, AtomicBoolean atomicBoolean)
+public record BuilderGuiImpl(BuildServerPlugin buildServerPlugin, BuilderStorage builderStorage, SkinCache skinCache,
+                             AtomicBoolean atomicBoolean, NamespacedKey uuidNameSpaceKey)
         implements BuilderGui {
 
     public BuilderGuiImpl(BuildServerPlugin buildServerPlugin, BuilderStorage builderStorage, SkinCache skinCache) {
-        this(buildServerPlugin, builderStorage, skinCache, new AtomicBoolean(false));
+        this(buildServerPlugin, builderStorage, skinCache, new AtomicBoolean(false), new NamespacedKey(buildServerPlugin, "builderuuid"));
     }
 
     private static final String SCROLL_UP_SKIN_VALUE = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOWNkYjhmNDM2NTZjMDZjNGU4NjgzZTJlNjM0MWI0NDc5ZjE1N2Y0ODA4MmZlYTRhZmYwOWIzN2NhM2M2OTk1YiJ9fX0=";
@@ -36,10 +41,10 @@ public record BuilderGuiImpl(BuildServerPlugin buildServerPlugin, BuilderStorage
             final List<Row> rowList = IntStream.range(0, (builderList.size() / 7) + (builderList.size() % 7 != 0 ? 1 : 0))
                     .mapToObj(rowCounter ->
                             new Row(builderList.subList(rowCounter * 7, Math.min((rowCounter + 1) * 7, builderList.size())),
-                                    buildServerPlugin(), skinCache())).toList();
+                                    buildServerPlugin(), skinCache(), uuidNameSpaceKey())).toList();
             ClickableInventory clickableInventory = new ClickableInventory(buildServerPlugin(), (2 + rowList.size()) * 9, Component.text("View Builders"));
             clickableInventory.destroyOnClose(true).registerListener();
-            setRows(clickableInventory, 0, rowList)
+            setRows(clickableInventory, 0, rowList, buildWorldData.worldUuid())
                     .setFillClickableItem(new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build())
                     .setClickableItem(4, new ItemStackBuilder(Material.PLAYER_HEAD,
                                     Component.text("Welten ersteller"))
@@ -90,7 +95,7 @@ public record BuilderGuiImpl(BuildServerPlugin buildServerPlugin, BuilderStorage
     }
 
     private ClickableInventory.ClickableItemStackBuilder setRows(ClickableInventory clickableInventory,
-                                                                 int scroller, List<Row> rowList) {
+                                                                 int scroller, List<Row> rowList, UUID worldUuid) {
         ClickableInventory.ClickableItemStackBuilder clickableItemStackBuilder = clickableInventory.updateInventory();
         final List<List<ItemStack>> lists = rowList.stream().skip(scroller).limit(5).map(Row::builderItemStackList)
                 .toList();
@@ -98,10 +103,19 @@ public record BuilderGuiImpl(BuildServerPlugin buildServerPlugin, BuilderStorage
         for (List<ItemStack> itemStackList : lists) {
             final int size = Math.min(itemStackList.size(), 9);
             for (int j = 1; j < size + 1; j++) {
-                clickableItemStackBuilder.setClickableItem(j + i*9, itemStackList.get(j - 1), (player, clickType) -> {
-                    //TODO REMOVE PLAYER
-                    if (atomicBoolean().get())
-                        player.sendMessage("TODO REMOVE PLAYER ^^'");
+                final ItemStack itemStack = itemStackList.get(j - 1);
+                clickableItemStackBuilder.setClickableItem(j + i*9, itemStack, (player, clickType) -> {
+                    final ItemMeta itemMeta;
+                    if (atomicBoolean().get() && itemStack.hasItemMeta() && (itemMeta = itemStack.getItemMeta())
+                            .getPersistentDataContainer().has(uuidNameSpaceKey(), PersistentDataType.BYTE_ARRAY)) {
+                        byte[] bytes = itemMeta.getPersistentDataContainer().get(uuidNameSpaceKey(),
+                                PersistentDataType.BYTE_ARRAY);
+                        assert bytes != null;
+                        final UUID uuid = UUIDConverter.convert(bytes);
+                        player.closeInventory();
+                        builderStorage().removeBuilder(uuid, worldUuid).whenComplete((aBoolean, throwable) ->
+                                player.sendMessage("Builder wurde entfernt!"));
+                    }
                 });
             }
             ++i;
@@ -111,7 +125,7 @@ public record BuilderGuiImpl(BuildServerPlugin buildServerPlugin, BuilderStorage
                     new ItemStackBuilder(Material.PLAYER_HEAD, Component.text("Scroll Up"))
                     .applyHeadTextures(buildServerPlugin(), SCROLL_UP_SKIN_VALUE).build(),
                     (player, click) -> setRows(
-                            clickableInventory, scroller - 1, rowList).applyUpdate()
+                            clickableInventory, scroller - 1, rowList, worldUuid).applyUpdate()
             );
         }
         if (rowList.size() - scroller > 5) {
@@ -119,7 +133,7 @@ public record BuilderGuiImpl(BuildServerPlugin buildServerPlugin, BuilderStorage
                     new ItemStackBuilder(Material.PLAYER_HEAD, Component.text("Scroll Up"))
                             .applyHeadTextures(buildServerPlugin(), SCROLL_DOWN_SKIN_VALUE).build(),
                     (player, click) -> setRows(
-                            clickableInventory, scroller + 1, rowList).applyUpdate()
+                            clickableInventory, scroller + 1, rowList, worldUuid).applyUpdate()
             );
         }
         return clickableItemStackBuilder;
@@ -127,11 +141,12 @@ public record BuilderGuiImpl(BuildServerPlugin buildServerPlugin, BuilderStorage
 
     private record Row(List<ItemStack> builderItemStackList) {
 
-        private Row(List<UUID> builderList, JavaPlugin javaPlugin, SkinCache skinCache) {
+        private Row(List<UUID> builderList, JavaPlugin javaPlugin, SkinCache skinCache, NamespacedKey namespacedKey) {
             this(builderList.stream()
                             .map(uuid -> new ItemStackBuilder(Material.PLAYER_HEAD,
                                     Component.text(skinCache.playerNameOfPlayerUuid(uuid, false)))
                                     .applyHeadTextures(javaPlugin, skinCache.skinValueOfPlayerUuid(uuid, false))
+                                    .applyNBTData(namespacedKey, PersistentDataType.BYTE_ARRAY, UUIDConverter.convert(uuid))
                                     .build()).toList()
                     );
         }
