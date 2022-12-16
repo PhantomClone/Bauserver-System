@@ -3,8 +3,10 @@ package me.phantomclone.minewars.buildserversystem;
 import com.zaxxer.hikari.HikariDataSource;
 import de.chojo.sqlutil.databases.SqlType;
 import de.chojo.sqlutil.datasource.DataSourceCreator;
+import me.phantomclone.minewars.buildserversystem.colorsign.ColorSign;
 import me.phantomclone.minewars.buildserversystem.commands.BuildSystemCommand;
 import me.phantomclone.minewars.buildserversystem.commands.GameModeCommand;
+import me.phantomclone.minewars.buildserversystem.commands.RenameCommand;
 import me.phantomclone.minewars.buildserversystem.gametype.GameTypRegistry;
 import me.phantomclone.minewars.buildserversystem.gametype.GameTypRegistryImpl;
 import me.phantomclone.minewars.buildserversystem.gui.GuiHandler;
@@ -62,7 +64,10 @@ public class BuildServerPluginImpl extends BuildServerPlugin {
         final PluginCommand gameModeCommand = getCommand("gamemode");
         if (gameModeCommand != null)
             gameModeCommand.setExecutor(new GameModeCommand());
-
+        final PluginCommand renameCommand = getCommand("rename");
+        if (renameCommand != null)
+            renameCommand.setExecutor(new RenameCommand());
+        getServer().getPluginManager().registerEvents(new ColorSign(this), this);
     }
 
     @Override

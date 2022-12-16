@@ -15,3 +15,7 @@ commands:
       - 2
       - gm
     usage: 'use /gamemode <0|1|2>'
+  rename:
+    permission: 'buildsystem.builder'
+    description: 'Rename item in main hand'
+    usage: 'use while holding an ItemStack /rename [&0Black Name&6!]'
