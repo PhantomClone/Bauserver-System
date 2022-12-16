@@ -4,6 +4,7 @@ import de.chojo.sqlutil.conversion.UUIDConverter;
 import me.phantomclone.minewars.buildserversystem.world.storage.*;
 import me.phantomclone.minewars.buildserversystem.world.worldSetting.WorldType;
 import org.apache.commons.io.FileUtils;
+import org.bukkit.GameRule;
 import org.bukkit.HeightMap;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
@@ -79,6 +80,9 @@ public record BuildWorldHandlerImpl(JavaPlugin javaPlugin, List<BuildWorld> load
         if (world == null)
             throw new NullPointerException("World is null");
         buildWorldCreator.getWorldSettingSet().forEach(worldSetting -> worldSetting.applyWorldRule(world));
+        world.setGameRule(GameRule.KEEP_INVENTORY, true);
+        world.setGameRule(GameRule.DISABLE_RAIDS, true);
+        world.setGameRule(GameRule.RANDOM_TICK_SPEED, 0);
 
         final BuildWorld buildWorld = new BuildWorldDataImpl(
                 world.getUID(),
