@@ -77,7 +77,8 @@ public class QueryGuiImpl implements QueryGui {
         final ClickableInventory.ClickableItemStackBuilder clickableItemStackBuilder =
                 new ClickableInventory(buildServerPlugin, buildServerPlugin.gameTypRegistry().inventorySize(),
                 Component.text("Such nach GameModus")).destroyOnClose(true).registerListener()
-                .updateInventory();
+                .updateInventory().setFillClickableItem(
+                                new ItemStackBuilder(Material.GLASS_PANE, Component.empty()).build());
         for (GameTyp typ : buildServerPlugin.gameTypRegistry().gameTypeList()) {
             clickableItemStackBuilder.setClickableItem(typ.slot(),
                     new ItemStackBuilder(typ.material(), typ.displayName()).build(),
