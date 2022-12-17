@@ -89,7 +89,10 @@ public record BuildWorldHandlerImpl(JavaPlugin javaPlugin, List<BuildWorld> load
                 buildWorldCreator.getWorldName(),
                 buildWorldCreator.getGameType(),
                 worldCreatorUuid,
-                System.currentTimeMillis()
+                System.currentTimeMillis(),
+                false,
+                null,
+                0
         ).toBuildWorld(List.of(worldCreatorUuid), world);
 
         this.loadedBuildWorld.add(buildWorld);

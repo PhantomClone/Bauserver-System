@@ -8,7 +8,11 @@ import me.phantomclone.minewars.buildserversystem.world.BuildWorld;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import javax.sql.DataSource;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,6 +23,8 @@ public record BuildWorldDataStorageImpl(JavaPlugin javaPlugin, BuilderStorage bu
                                     StatementStage<BuildWorldData> loadBuildWorldStatementStage,
                                     StatementStage<?> insertBuildWorldStatementStage,
                                     StatementStage<?> deleteBuildWorldStatementStage,
+                                    StatementStage<?> evaluateBuildWorldStatementStage,
+                                    StatementStage<?> approvedBuildWorldStatementStage,
                                     StatementStage<BuildWorldData> buildWorldDataListStatementStage,
                                     StatementStage<BuildWorldData> buildWorldDataListOfBuilderStatementStage,
                                     StatementStage<BuildWorldData> buildWorldDataListOfShortNameStatementStage,
@@ -36,33 +42,39 @@ public record BuildWorldDataStorageImpl(JavaPlugin javaPlugin, BuilderStorage bu
                 QueryBuilder.builder(dataSource).defaultConfig()
                         .query("CREATE TABLE IF NOT EXISTS BuildWorld(worldUuid BINARY(16) NOT NULL, worldName VARCHAR(255) NOT NULL, " +
                                 "gameType VARCHAR(10) NOT NULL, worldCreatorUuid BINARY(16) NOT NULL, " +
-                                "created TIMESTAMP NOT NULL, PRIMARY KEY (worldUuid))"),
+                                "created TIMESTAMP NOT NULL, evaluate BOOLEAN NOT NULL DEFAULT FALSE, approvedHeadBuilder BINARY(16), " +
+                                "approvedTime TIMESTAMP, PRIMARY KEY (worldUuid))"),
                 QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()
-                        .query("SELECT worldName, gameType, worldCreatorUuid, created FROM BuildWorld WHERE worldUuid=? LIMIT=1"),
+                        .query("SELECT worldName, gameType, worldCreatorUuid, created, evaluate, approvedHeadBuilder, approvedTime FROM BuildWorld WHERE worldUuid=? LIMIT=1"),
                 QueryBuilder.builder(dataSource).defaultConfig()
                         .query("INSERT INTO BuildWorld(worldUuid, worldName, gameType, worldCreatorUuid, created) VALUES(?, ?, ?, ?, ?)"),
                 QueryBuilder.builder(dataSource).defaultConfig()
                         .query("DELETE FROM BuildWorld WHERE worldUuid=?"),
+                QueryBuilder.builder(dataSource).defaultConfig()
+                        .query("UPDATE BuildWorld SET evaluate=? WHERE worldUuid=?"),
+                QueryBuilder.builder(dataSource).defaultConfig()
+                        .query("UPDATE BuildWorld SET approvedHeadBuilder=?, approvedTime=? WHERE worldUuid=?"),
                 QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()
-                        .query("SELECT worldUuid, worldName, gameType, worldCreatorUuid, created FROM BuildWorld"),
+                        .query("SELECT worldUuid, worldName, gameType, worldCreatorUuid, created, evaluate, approvedHeadBuilder, approvedTime FROM BuildWorld"),
                 QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()
-                        .query("SELECT bw.worldUuid, bw.worldName, bw.gameType, bw.worldCreatorUuid, bw.created FROM BuildWorld bw, Builder b " +
-                                "WHERE bw.worldUuid = b.worldUuid AND b.builderUuid = ?"),
-                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()//TODO SHORTNAME
-                        .query("SELECT worldUuid, worldName, gameType, worldCreatorUuid, created FROM BuildWorld WHERE gameType=?"),
-                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()//TODO WORLDNAME
-                        .query("SELECT worldUuid, worldName, gameType, worldCreatorUuid, created FROM BuildWorld WHERE worldName=?"),
-                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()//TODO BUILDER SHORTNAME
-                        .query("SELECT bw.worldUuid, bw.worldName, bw.gameType, bw.worldCreatorUuid, bw.created FROM BuildWorld bw, Builder b " +
-                                "WHERE bw.gameType=? AND bw.worldUuid = b.worldUuid AND b.builderUuid = ?"),
-                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()//TODO BUILDER WORLDNAME
-                        .query("SELECT bw.worldUuid, bw.worldName, bw.gameType, bw.worldCreatorUuid, bw.created FROM BuildWorld bw, Builder b " +
-                                "WHERE bw.worldName=? AND bw.worldUuid = b.worldUuid AND b.builderUuid = ?"),
-                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()//TODO SHORTNAME WORLDNAME
-                        .query("SELECT worldUuid, worldName, gameType, worldCreatorUuid, created FROM BuildWorld WHERE gameType=? AND worldName=?"),
-                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()//TODO BUILDER WORLDNAME SHORTNAME
-                        .query("SELECT bw.worldUuid, bw.worldName, bw.gameType, bw.worldCreatorUuid, bw.created FROM BuildWorld bw, Builder b " +
-                                "WHERE bw.worldName=? AND bw.shortName=? AND bw.worldUuid = b.worldUuid AND b.builderUuid = ?")
+                        .query("SELECT bw.worldUuid, bw.worldName, bw.gameType, bw.worldCreatorUuid, bw.created, bw.evaluate, bw.approvedHeadBuilder, bw.approvedTime" +
+                                " FROM BuildWorld bw, Builder b WHERE bw.worldUuid = b.worldUuid AND b.builderUuid = ?"),
+                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()
+                        .query("SELECT worldUuid, worldName, gameType, worldCreatorUuid, created, evaluate, approvedHeadBuilder, approvedTime FROM BuildWorld WHERE gameType=?"),
+                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()
+                        .query("SELECT worldUuid, worldName, gameType, worldCreatorUuid, created, evaluate, approvedHeadBuilder, approvedTime FROM BuildWorld WHERE worldName=?"),
+                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()
+                        .query("SELECT bw.worldUuid, bw.worldName, bw.gameType, bw.worldCreatorUuid, bw.created, evaluate, approvedHeadBuilder, approvedTime " +
+                                "FROM BuildWorld bw, Builder b WHERE bw.gameType=? AND bw.worldUuid = b.worldUuid AND b.builderUuid = ?"),
+                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()
+                        .query("SELECT bw.worldUuid, bw.worldName, bw.gameType, bw.worldCreatorUuid, bw.created, evaluate, approvedHeadBuilder, approvedTime " +
+                                "FROM BuildWorld bw, Builder b WHERE bw.worldName=? AND bw.worldUuid = b.worldUuid AND b.builderUuid = ?"),
+                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()
+                        .query("SELECT worldUuid, worldName, gameType, worldCreatorUuid, created, evaluate, approvedHeadBuilder, approvedTime " +
+                                "FROM BuildWorld WHERE gameType=? AND worldName=?"),
+                QueryBuilder.builder(dataSource, BuildWorldData.class).defaultConfig()
+                        .query("SELECT bw.worldUuid, bw.worldName, bw.gameType, bw.worldCreatorUuid, bw.created, bw.evaluate, bw.approvedHeadBuilder, bw.approvedTime " +
+                                "FROM BuildWorld bw, Builder b WHERE bw.worldName=? AND bw.shortName=? AND bw.worldUuid = b.worldUuid AND b.builderUuid = ?")
         );
     }
 
@@ -75,13 +87,7 @@ public record BuildWorldDataStorageImpl(JavaPlugin javaPlugin, BuilderStorage bu
     public CompletableFuture<Optional<BuildWorldData>> loadBuildWorld(UUID worldUuid) {
          return loadBuildWorldStatementStage()
                 .paramsBuilder(paramBuilder -> paramBuilder.setBytes(UUIDConverter.convert(worldUuid)))
-                .readRow(resultSet -> new BuildWorldDataImpl(
-                        worldUuid,
-                        resultSet.getString("worldName"),
-                        resultSet.getString("gameType"),
-                        UUIDConverter.convert(resultSet.getBytes("worldCreatorUuid")),
-                        resultSet.getTimestamp("created").getTime()
-                        )).first();
+                .readRow(this::buildWorldDataFromResultSet).first();
     }
 
     @Override
@@ -105,26 +111,30 @@ public record BuildWorldDataStorageImpl(JavaPlugin javaPlugin, BuilderStorage bu
     @Override
     public CompletableFuture<List<BuildWorldData>> buildWorldDataList() {
         return buildWorldDataListStatementStage().emptyParams()
-                .readRow(resultSet -> new BuildWorldDataImpl(
-                        UUIDConverter.convert(resultSet.getBytes("worldUuid")),
-                        resultSet.getString("worldName"),
-                        resultSet.getString("gameType"),
-                        UUIDConverter.convert(resultSet.getBytes("worldCreatorUuid")),
-                        resultSet.getTimestamp("created").getTime()
-                )).all();
+                .readRow(this::buildWorldDataFromResultSet).all();
     }
 
     @Override
     public CompletableFuture<List<BuildWorldData>> buildWorldDataListOfBuilder(UUID builderUuid) {
         return buildWorldDataListOfBuilderStatementStage()
                 .paramsBuilder(paramBuilder -> paramBuilder.setBytes(UUIDConverter.convert(builderUuid)))
-                .readRow(resultSet -> new BuildWorldDataImpl(
-                        UUIDConverter.convert(resultSet.getBytes("worldUuid")),
-                        resultSet.getString("worldName"),
-                        resultSet.getString("gameType"),
-                        UUIDConverter.convert(resultSet.getBytes("worldCreatorUuid")),
-                        resultSet.getTimestamp("created").getTime())
-                ).all();
+                .readRow(this::buildWorldDataFromResultSet).all();
+    }
+
+    @Override
+    public CompletableFuture<Boolean> setEvaluate(UUID worldUuid, boolean evaluate) {
+        return evaluateBuildWorldStatementStage().paramsBuilder(paramBuilder -> paramBuilder.setBoolean(evaluate)
+                .setBytes(UUIDConverter.convert(worldUuid))).update().execute().thenApply(integer -> integer != 0);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> setApproved(UUID worldUuid, UUID approvedHeadBuilder, long approvedTime) {
+        return approvedBuildWorldStatementStage().paramsBuilder(paramBuilder ->
+                paramBuilder.setBytes(approvedHeadBuilder == null ? null : UUIDConverter.convert(approvedHeadBuilder))
+                        .setString(approvedTime == 0 ? "0000-00-00 00:00:00" : DateFormat.getInstance()
+                                .format(new Date(approvedTime)).replace('.', '-').replace(",", ""))
+                        .setBytes(UUIDConverter.convert(worldUuid))
+        ).update().execute().thenApply(integer -> integer != 0);
     }
 
     @Override
@@ -156,12 +166,21 @@ public record BuildWorldDataStorageImpl(JavaPlugin javaPlugin, BuilderStorage bu
         } else {
             buildWorldDataResultStage = buildWorldDataListStatementStage().emptyParams();
         }
-        return buildWorldDataResultStage.readRow(resultSet -> new BuildWorldDataImpl(
+        return buildWorldDataResultStage.readRow(this::buildWorldDataFromResultSet).all();
+    }
+
+    private BuildWorldData buildWorldDataFromResultSet(ResultSet resultSet) throws SQLException {
+        final byte[] approvedHeadBuilders = resultSet.getBytes("approvedHeadBuilder");
+        final Timestamp approvedTime = resultSet.getTimestamp("approvedTime");
+        return new BuildWorldDataImpl(
                 UUIDConverter.convert(resultSet.getBytes("worldUuid")),
                 resultSet.getString("worldName"),
                 resultSet.getString("gameType"),
                 UUIDConverter.convert(resultSet.getBytes("worldCreatorUuid")),
-                resultSet.getTimestamp("created").getTime()
-        )).all();
+                resultSet.getTimestamp("created").getTime(),
+                resultSet.getBoolean("evaluate"),
+                approvedHeadBuilders == null ? null : UUIDConverter.convert(approvedHeadBuilders),
+                approvedTime == null ? 0 : approvedTime.getTime()
+        );
     }
 }

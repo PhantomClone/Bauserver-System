@@ -20,4 +20,7 @@ public interface BuildWorldDataStorage {
 
     CompletableFuture<List<BuildWorldData>> buildWorldDataListWithFilter(String shortGameType, UUID builderUuid, String worldName);
 
+    CompletableFuture<Boolean> setEvaluate(UUID worldUuid, boolean evaluate);
+    CompletableFuture<Boolean> setApproved(UUID worldUuid, UUID approvedHeadBuilder, long approvedTime);
+
 }

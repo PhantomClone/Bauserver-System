@@ -138,6 +138,7 @@ public record AllBuildWorldGuiImpl(BuildServerPlugin buildServerPlugin, SkinCach
                     .map(buildWorldData -> new ItemStackBuilder(buildServerPlugin.gameTypRegistry().gameTypeList().stream()
                             .filter(gameTyp -> gameTyp.shortName().equals(buildWorldData.gameType())).map(GameTyp::material).findFirst().orElse(Material.PLAYER_HEAD),
                             Component.text(buildWorldData.worldName()))
+                            .applyLore(buildWorldData.loreComponent(skinCache, buildServerPlugin.gameTypRegistry()))
                             .applyNBTData(buildWorldNameSpace, new PersistentDataTypeBuildWorldData(), buildWorldData)
                             .build()).toList()
             );

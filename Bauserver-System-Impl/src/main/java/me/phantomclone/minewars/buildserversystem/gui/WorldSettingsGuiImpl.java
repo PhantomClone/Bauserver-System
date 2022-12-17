@@ -1,12 +1,12 @@
 package me.phantomclone.minewars.buildserversystem.gui;
 
 import me.phantomclone.minewars.buildserversystem.BuildServerPlugin;
-import me.phantomclone.minewars.buildserversystem.gametype.GameTyp;
 import me.phantomclone.minewars.buildserversystem.world.storage.BuildWorldData;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.text.DateFormat;
 import java.util.Date;
@@ -23,8 +23,9 @@ public record WorldSettingsGuiImpl(BuildServerPlugin buildServerPlugin) implemen
     public void openGui(Player player, BuildWorldData buildWorldData, Consumer<Player> callOnBack) {
         final ClickableInventory clickableInventory = new ClickableInventory(buildServerPlugin(), 3 * 9,
                 Component.text("World Settings"));
+        final ItemStack fillItemStack = new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build();
         clickableInventory.updateInventory()
-                .setFillClickableItem(new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build())
+                .setFillClickableItem(fillItemStack)
                 .setClickableItem(18, new ClickableItemStack(
                         new ItemStackBuilder(Material.PLAYER_HEAD, Component.text("Zurück")
                                 .color(TextColor.color(16733525)))
@@ -34,7 +35,9 @@ public record WorldSettingsGuiImpl(BuildServerPlugin buildServerPlugin) implemen
                 .setClickableItem(10, loadClickableItemStack(buildWorldData))
                 .setClickableItem(12, unloadSaveClickableItemStack(buildWorldData))
                 .setClickableItem(13, teleportClickableItemStack(buildWorldData))
+                .setClickableItem(14, evaluateClickableItemStack(buildWorldData))
                 .setClickableItem(16, builderClickableItemStack(clickableInventory, buildWorldData))
+                .setClickableItem(22, approveClickableItemStack(buildWorldData, player.hasPermission("builder.headbuilder")))
                 .setClickableItem(26, deleteClickableItemStack(buildWorldData))
                 .applyUpdate().registerListener().openInventory(player);
     }
@@ -67,19 +70,7 @@ public record WorldSettingsGuiImpl(BuildServerPlugin buildServerPlugin) implemen
     private ClickableItemStack worldInfoClickableItemStack(BuildWorldData buildWorldData) {
         return new ClickableItemStack(
                 new ItemStackBuilder(Material.PLAYER_HEAD, Component.text(buildWorldData.worldName()))
-                        .applyLore(
-                                Component.text("Welt Uuid: ").append(Component.text(buildWorldData.worldUuid().toString())),
-                                Component.text("Game Modus: ").append(
-                                        buildServerPlugin().gameTypRegistry().gameTypeList().stream()
-                                                .filter(gameTyp -> gameTyp.shortName().equals(buildWorldData.gameType()))
-                                                .map(GameTyp::displayName)
-                                                .findFirst().orElse(Component.text("Not found!"))
-                                ),
-                                Component.text("Welt Ersteller: ").append(Component.text(buildServerPlugin().
-                                        skinCache().playerNameOfPlayerUuid(buildWorldData.worldCreatorUuid(), false))),
-                                Component.text("Erstellt am ").append(Component.text(DateFormat.getInstance()
-                                        .format(new Date(buildWorldData.created()))))
-                        )
+                        .applyLore(buildWorldData.loreComponent(buildServerPlugin().skinCache(), buildServerPlugin().gameTypRegistry()))
                         .applyHeadTextures(buildServerPlugin(), WORLD_SKIN_DATA)
                         .build(),
                 (player, clickType) -> {}
@@ -95,6 +86,82 @@ public record WorldSettingsGuiImpl(BuildServerPlugin buildServerPlugin) implemen
                                 () ->  player.sendMessage("Welt ist nicht geladen!")
                         )
         );
+    }
+
+    private ClickableItemStack evaluateClickableItemStack(BuildWorldData buildWorldData) {
+        final ItemStack itemStack = buildWorldData.evaluate() ?
+                new ItemStackBuilder(Material.LIME_DYE, Component.text("Abgegeben"))
+                        .applyLore(Component.empty(), Component.text("Klicke, um die Bauwelt auf 'Noch nicht abgegeben'"),
+                                Component.text("zu setzten")).build():
+                new ItemStackBuilder(Material.RED_DYE, Component.text("Noch nicht abgegeben"))
+                        .applyLore(Component.empty(), Component.text("Klicke, um die Bauwelt auf 'Abgegeben'"),
+                                Component.text("zu setzten")).build();
+        return new ClickableItemStack(itemStack, (player, clickType) -> {
+            if (player.getUniqueId().equals(buildWorldData.worldCreatorUuid())) {
+                buildServerPlugin().worldHandler().buildWorldDataStorage().setEvaluate(buildWorldData.worldUuid(), !buildWorldData.evaluate())
+                        .whenComplete((aBoolean, throwable) -> player.sendMessage(String.format("Bauwelt %s wurde auf %s gesetzt.",
+                                buildWorldData.worldName(), buildWorldData.evaluate() ? "Noch nicht abgegeben" : "Abgegeben")));
+                player.closeInventory();
+            } else {
+                player.sendMessage("Nur der Welten ersteller darf die Welt abgeben!");
+            }
+        });
+    }
+
+    private ClickableItemStack approveClickableItemStack(BuildWorldData buildWorldData, boolean headBuilder) {
+        if (buildWorldData.evaluate() && headBuilder) {
+            return new ClickableItemStack(
+                    new ItemStackBuilder(Material.GRAY_DYE, Component.text("Warte auf bewertung..."))
+                            .applyLore(Component.empty(), Component.text("Rechtsklick für 'genehmigen'"),
+                                    Component.empty(), Component.text("Linksklick für 'ablehnen'"))
+                            .build(),
+                    (player, clickType) -> {
+                        Component component;
+                        if (clickType.isRightClick()) {
+                            buildServerPlugin().worldHandler().buildWorldDataStorage().setApproved(
+                                    buildWorldData.worldUuid(), player.getUniqueId(), System.currentTimeMillis()
+                            );
+                            component = Component.text(buildWorldData.worldName()).append(Component.text(" wurde genehmigt!"));
+                        } else {
+                            buildServerPlugin().worldHandler().buildWorldDataStorage().setApproved(
+                                    buildWorldData.worldUuid(), player.getUniqueId(), 0
+                            );
+                            component = Component.text(buildWorldData.worldName()).append(Component.text(" wurde abgelehnt!"));
+                        }
+                        buildServerPlugin().worldHandler().buildWorldDataStorage().setEvaluate(buildWorldData.worldUuid(), false);
+                        player.sendMessage(component);
+                        player.closeInventory();
+                    }
+            );
+        } else if (buildWorldData.evaluate()) {
+            return new ClickableItemStack(
+                    new ItemStackBuilder(Material.GRAY_DYE, Component.text("Warte auf bewertung eines Headbuilders"))
+                            .build(), (player, clickType) -> {});
+        } else if (buildWorldData.approvedHeadBuilder() != null && buildWorldData.approvedTime() != 0) {
+            return new ClickableItemStack(
+                    new ItemStackBuilder(Material.LIME_DYE, Component.text("Bauwelt wurde genehmigt!"))
+                            .applyLore(Component.empty(), Component.text("BauWelt wurde von ")
+                                            .append(Component.text(buildServerPlugin.skinCache()
+                                                    .playerNameOfPlayerUuid(buildWorldData.approvedHeadBuilder(), false)))
+                                            .append(Component.text(" genehmigt")),
+                                    Component.text("Genehmig am ").append(Component.text(DateFormat.getInstance()
+                                                    .format(new Date(buildWorldData.approvedTime())))))
+                            .build(),
+                    (player, clickType) -> {}
+            );
+        } else if (buildWorldData.approvedHeadBuilder() != null) {
+            return new ClickableItemStack(
+                    new ItemStackBuilder(Material.RED_DYE, Component.text("Bauwelt wurde abgelehnt!"))
+                            .applyLore(Component.empty(), Component.text("BauWelt wurde von ")
+                                    .append(Component.text(buildServerPlugin.skinCache()
+                                            .playerNameOfPlayerUuid(buildWorldData.approvedHeadBuilder(), false)))
+                                    .append(Component.text(" abgelehnt")))
+                            .build(), (player, clickType) -> {}
+            );
+        } else {
+            return new ClickableItemStack(new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build(),
+                    (player, clickType) -> {});
+        }
     }
 
     private ClickableItemStack builderClickableItemStack(ClickableInventory clickableInventory, BuildWorldData buildWorldData) {

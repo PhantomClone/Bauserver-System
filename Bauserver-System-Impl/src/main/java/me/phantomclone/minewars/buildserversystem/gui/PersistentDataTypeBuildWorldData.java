@@ -26,7 +26,8 @@ public class PersistentDataTypeBuildWorldData implements PersistentDataType<byte
     public byte @NotNull [] toPrimitive(@NotNull BuildWorldData buildWorldData, @NotNull PersistentDataAdapterContext persistentDataAdapterContext) {
         final byte[] nameBytes = buildWorldData.worldName().getBytes(StandardCharsets.UTF_8);
         final byte[] typeByte = buildWorldData.gameType().getBytes(StandardCharsets.UTF_8);
-        final ByteBuffer byteBuffer = ByteBuffer.allocate(16 + 16 + 4 + nameBytes.length + 4 + typeByte.length + 8);
+        final ByteBuffer byteBuffer = ByteBuffer.allocate(16 + 16 + 4 + nameBytes.length + 4 + typeByte.length + 8 +
+                1 + (buildWorldData.approvedHeadBuilder() != null ? 16 + 8 : 0));
         byteBuffer.put(UUIDConverter.convert(buildWorldData.worldUuid()));
         byteBuffer.put(UUIDConverter.convert(buildWorldData.worldCreatorUuid()));
         byteBuffer.putInt(nameBytes.length);
@@ -34,6 +35,11 @@ public class PersistentDataTypeBuildWorldData implements PersistentDataType<byte
         byteBuffer.putInt(typeByte.length);
         byteBuffer.put(typeByte);
         byteBuffer.putLong(buildWorldData.created());
+        byteBuffer.put((byte) (buildWorldData.evaluate() ? 0b1 : 0b0));
+        if (buildWorldData.approvedHeadBuilder() != null) {
+            byteBuffer.put(UUIDConverter.convert(buildWorldData.approvedHeadBuilder()));
+            byteBuffer.putLong(buildWorldData.approvedTime());
+        }
         return byteBuffer.array();
     }
 
@@ -54,6 +60,18 @@ public class PersistentDataTypeBuildWorldData implements PersistentDataType<byte
         byteBuffer.get(typeByte);
         final String gameType = new String(typeByte, StandardCharsets.UTF_8);
         final long created = byteBuffer.getLong();
-        return new BuildWorldDataImpl(worldUuid, worldName, gameType, worldCreator, created);
+        final boolean evaluate = byteBuffer.get() != 0;
+        final UUID approvedHeadBuilder;
+        final long approvedTime;
+        if (byteBuffer.hasRemaining()) {
+            byteBuffer.get(uuidBuffer);
+            approvedHeadBuilder = UUIDConverter.convert(uuidBuffer);
+            approvedTime = byteBuffer.getLong();
+        } else {
+            approvedHeadBuilder = null;
+            approvedTime = 0;
+        }
+        return new BuildWorldDataImpl(worldUuid, worldName, gameType, worldCreator, created,
+                evaluate, approvedHeadBuilder, approvedTime);
     }
 }
