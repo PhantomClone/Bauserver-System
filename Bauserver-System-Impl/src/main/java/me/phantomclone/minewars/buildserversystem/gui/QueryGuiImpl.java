@@ -2,6 +2,7 @@ package me.phantomclone.minewars.buildserversystem.gui;
 
 import me.phantomclone.minewars.buildserversystem.BuildServerPlugin;
 import me.phantomclone.minewars.buildserversystem.gametype.GameTyp;
+import me.phantomclone.minewars.buildserversystem.world.storage.BuildWorldData;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.wesjd.anvilgui.AnvilGUI;
@@ -23,9 +24,11 @@ public class QueryGuiImpl implements QueryGui {
     private GameTyp gameTyp;
     private UUID builderUuid;
     private String worldName;
+    private boolean searchForEvaluate;
 
     public QueryGuiImpl(BuildServerPlugin buildServerPlugin) {
         this.buildServerPlugin = buildServerPlugin;
+        searchForEvaluate = false;
     }
 
     @Override
@@ -46,14 +49,32 @@ public class QueryGuiImpl implements QueryGui {
                                 buildServerPlugin.worldHandler().buildWorldDataStorage()
                                         .buildWorldDataListWithFilter(this.gameTyp == null ? null : this.gameTyp.shortName(), this.builderUuid, this.worldName)
                                         .whenComplete((buildWorldDataList, throwable) ->
-                                                        buildServerPlugin.guiHandler().allBuildWorldGui().openGui(clickedPlayer, aBoolean -> {}, buildWorldDataList, true)
+                                                        buildServerPlugin.guiHandler().allBuildWorldGui()
+                                                                .openGui(clickedPlayer, aBoolean -> {},
+                                                                        this.searchForEvaluate ?
+                                                                                buildWorldDataList.stream().filter(BuildWorldData::evaluate).toList() :
+                                                                                buildWorldDataList, true)
                                         )
                 )
         ).applyUpdate();
+        setSearchForEvaluate(clickableInventory);
         setBuilderUuid(clickableInventory);
         setGameTyp(clickableInventory);
         setWorldName(clickableInventory);
         clickableInventory.openInventory(player);
+    }
+
+    private void setSearchForEvaluate(ClickableInventory clickableInventory) {
+        clickableInventory.updateInventory().setClickableItem(12,
+                        new ClickableItemStack(new ItemStackBuilder(this.searchForEvaluate ? Material.LIME_DYE : Material.BARRIER,
+                                this.searchForEvaluate  ? Component.text("Filter nach Abgaben") :
+                                        Component.text("Click um nach Abgaben zu Filtern")).build(),
+                                (player, clickType) -> {
+                                   searchForEvaluate = !searchForEvaluate;
+                                   setSearchForEvaluate(clickableInventory);
+                                }
+                        ))
+                .applyUpdate();
     }
 
     private void setGameTyp(ClickableInventory clickableInventory) {
