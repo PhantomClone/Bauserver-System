@@ -5,6 +5,7 @@ import com.destroystokyo.paper.profile.ProfileProperty;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -63,6 +64,7 @@ public class ItemStackBuilder {
     }
 
     public ItemStack build() {
+        this.itemMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         this.itemStack.setItemMeta(itemMeta);
         return this.itemStack;
     }
