@@ -17,7 +17,7 @@ public record BuildSystemGuiImpl(JavaPlugin javaPlugin,
 
     public BuildSystemGuiImpl(JavaPlugin javaPlugin, AllBuildWorldGui allBuildWorldGui, CreateNewWorldGui createNewWorldGui) {
         this(javaPlugin,
-                new ClickableItemStack(new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build(),
+                new ClickableItemStack(new ItemStackBuilder(Material.LIGHT_GRAY_STAINED_GLASS_PANE, Component.empty()).build(),
                         (player, clickType) -> {}),
                 new ClickableItemStack(new ItemStackBuilder(Material.PLAYER_HEAD, Component.text("Meine Bauwelten")
                         .color(TextColor.color(11184810)))
@@ -35,7 +35,7 @@ public record BuildSystemGuiImpl(JavaPlugin javaPlugin,
     @Override
     public void openGui(Player player, boolean headBuilder) {
         new ClickableInventory(javaPlugin(), 3*9, Component.text("BuildSystem")).updateInventory()
-                .setFillClickableItem(new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build())
+                .setFillClickableItem(new ItemStackBuilder(Material.LIGHT_GRAY_STAINED_GLASS_PANE, Component.empty()).build())
                 .setClickableItem(11, myBuildWorldsClickableItemStack())
                 .setClickableItem(13, headBuilder ? allWorldsClickableItemStack() : fillClickableItemStack())
                 .setClickableItem(15, createNewWorldClickableItemStack()).applyUpdate().destroyOnClose(true)

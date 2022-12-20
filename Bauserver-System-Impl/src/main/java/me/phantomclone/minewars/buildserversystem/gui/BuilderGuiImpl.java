@@ -45,7 +45,7 @@ public record BuilderGuiImpl(BuildServerPlugin buildServerPlugin, BuilderStorage
             ClickableInventory clickableInventory = new ClickableInventory(buildServerPlugin(), (2 + rowList.size()) * 9, Component.text("View Builders"));
             clickableInventory.destroyOnClose(true).registerListener();
             setRows(clickableInventory, 0, rowList, buildWorldData.worldUuid())
-                    .setFillClickableItem(new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build())
+                    .setFillClickableItem(new ItemStackBuilder(Material.LIGHT_GRAY_STAINED_GLASS_PANE, Component.empty()).build())
                     .setClickableItem(4, new ItemStackBuilder(Material.PLAYER_HEAD,
                                     Component.text("Welten ersteller"))
                                     .applyHeadTextures(buildServerPlugin(), skinCache().skinValueOfPlayerUuid(buildWorldData.worldCreatorUuid(), false))

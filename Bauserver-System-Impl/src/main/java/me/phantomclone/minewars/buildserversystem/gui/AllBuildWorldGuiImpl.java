@@ -76,7 +76,7 @@ public record AllBuildWorldGuiImpl(BuildServerPlugin buildServerPlugin, SkinCach
                     ).applyUpdate();
 
         return setRows(clickableInventory, 0, rowList)
-                .setFillClickableItem(new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build())
+                .setFillClickableItem(new ItemStackBuilder(Material.LIGHT_GRAY_STAINED_GLASS_PANE, Component.empty()).build())
                 .setClickableItem((rowList.size() + 2) * 9 - 9, new ClickableItemStack(
                         new ItemStackBuilder(Material.PLAYER_HEAD, Component.text("Zurück")
                                 .color(TextColor.color(16733525)))

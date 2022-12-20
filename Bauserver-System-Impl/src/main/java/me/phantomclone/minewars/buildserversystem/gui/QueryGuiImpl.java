@@ -36,7 +36,7 @@ public class QueryGuiImpl implements QueryGui {
         final ClickableInventory clickableInventory = new ClickableInventory(this.buildServerPlugin, 3 * 9,
                 Component.text("Suche"));
         clickableInventory.destroyOnClose(true).registerListener().updateInventory().setFillClickableItem(
-                new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build()
+                new ItemStackBuilder(Material.LIGHT_GRAY_STAINED_GLASS_PANE, Component.empty()).build()
         ).setClickableItem(9, new ClickableItemStack(
                 new ItemStackBuilder(Material.PLAYER_HEAD, Component.text("Zurück")
                         .color(TextColor.color(16733525)))
@@ -99,7 +99,7 @@ public class QueryGuiImpl implements QueryGui {
                 new ClickableInventory(buildServerPlugin, buildServerPlugin.gameTypRegistry().inventorySize(),
                 Component.text("Such nach GameModus")).destroyOnClose(true).registerListener()
                 .updateInventory().setFillClickableItem(
-                                new ItemStackBuilder(Material.GLASS_PANE, Component.empty()).build());
+                                new ItemStackBuilder(Material.LIGHT_GRAY_STAINED_GLASS_PANE, Component.empty()).build());
         for (GameTyp typ : buildServerPlugin.gameTypRegistry().gameTypeList()) {
             clickableItemStackBuilder.setClickableItem(typ.slot(),
                     new ItemStackBuilder(typ.material(), typ.displayName()).build(),

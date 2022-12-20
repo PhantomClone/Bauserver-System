@@ -42,10 +42,9 @@ public record CreateNewWorldGuiImpl(BuildServerPlugin buildServerPlugin, Map<Pla
     private void openCreateWorld(BuildWorldCreator buildWorldCreator, Player player) {
         final ClickableInventory clickableInventory =
                 new ClickableInventory(this.buildServerPlugin, 3*9,
-                        Component.text("Neue Welt erstellen")
-                                .color(TextColor.color(11184810))).destroyOnClose(true).registerListener();
+                        Component.text("Neue Welt erstellen")).destroyOnClose(true).registerListener();
         applyWorldType(buildWorldCreator.getWorldType(), clickableInventory.updateInventory().setFillClickableItem(
-                new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build()
+                new ItemStackBuilder(Material.LIGHT_GRAY_STAINED_GLASS_PANE, Component.empty()).build()
         ).setClickableItem(9,
                 new ItemStackBuilder(WorldType.FLAT.material(), Component.text("Flat")
                         .color(TextColor.color(5635925))).build(),
@@ -121,11 +120,11 @@ public record CreateNewWorldGuiImpl(BuildServerPlugin buildServerPlugin, Map<Pla
     private void firstNext(Player player, BuildWorldCreator buildWorldCreator) {
         final int inventorySize = buildServerPlugin().gameTypRegistry().inventorySize();
         final ClickableInventory clickableInventory = new ClickableInventory(this.buildServerPlugin, inventorySize,
-                Component.text("Spielmodus wählen").color(TextColor.color(11184810)))
+                Component.text("Spielmodus wählen"))
                 .destroyOnClose(true).registerListener();
         final ClickableInventory.ClickableItemStackBuilder clickableItemStackBuilder = clickableInventory
                 .updateInventory().setFillClickableItem(
-                        new ItemStackBuilder(Material.GLASS_PANE, Component.empty()).build());
+                        new ItemStackBuilder(Material.LIGHT_GRAY_STAINED_GLASS_PANE, Component.empty()).build());
 
         buildServerPlugin().gameTypRegistry().gameTypeList().forEach(gameType -> {
             clickableItemStackBuilder.setClickableItem(gameType.slot(), new ItemStackBuilder(gameType.material(), gameType.displayName()).build(),
@@ -180,7 +179,7 @@ public record CreateNewWorldGuiImpl(BuildServerPlugin buildServerPlugin, Map<Pla
 
     private void secondNext(Player player, BuildWorldCreator buildWorldCreator) {
         final ClickableInventory clickableInventory = new ClickableInventory(this.buildServerPlugin, 27,
-                Component.text("Einstellung").color(TextColor.color(11184810)))
+                Component.text("Einstellung"))
                 .destroyOnClose(true).registerListener()
                 .updateInventory().setFillClickableItem(new ItemStackBuilder(Material.GLASS_PANE, Component.empty()).build())
                 .applyUpdate();

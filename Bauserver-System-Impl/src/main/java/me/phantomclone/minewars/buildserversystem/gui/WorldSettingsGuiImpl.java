@@ -23,7 +23,7 @@ public record WorldSettingsGuiImpl(BuildServerPlugin buildServerPlugin) implemen
     public void openGui(Player player, BuildWorldData buildWorldData, Consumer<Player> callOnBack) {
         final ClickableInventory clickableInventory = new ClickableInventory(buildServerPlugin(), 3 * 9,
                 Component.text("World Settings"));
-        final ItemStack fillItemStack = new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build();
+        final ItemStack fillItemStack = new ItemStackBuilder(Material.LIGHT_GRAY_STAINED_GLASS_PANE, Component.empty()).build();
         clickableInventory.updateInventory()
                 .setFillClickableItem(fillItemStack)
                 .setClickableItem(18, new ClickableItemStack(
@@ -159,7 +159,7 @@ public record WorldSettingsGuiImpl(BuildServerPlugin buildServerPlugin) implemen
                             .build(), (player, clickType) -> {}
             );
         } else {
-            return new ClickableItemStack(new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE, Component.empty()).build(),
+            return new ClickableItemStack(new ItemStackBuilder(Material.LIGHT_GRAY_STAINED_GLASS_PANE, Component.empty()).build(),
                     (player, clickType) -> {});
         }
     }
