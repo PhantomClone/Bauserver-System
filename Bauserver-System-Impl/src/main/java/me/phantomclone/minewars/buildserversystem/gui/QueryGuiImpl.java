@@ -65,7 +65,7 @@ public class QueryGuiImpl implements QueryGui {
     }
 
     private void setSearchForEvaluate(ClickableInventory clickableInventory) {
-        clickableInventory.updateInventory().setClickableItem(12,
+        clickableInventory.updateInventory().setClickableItem(11,
                         new ClickableItemStack(new ItemStackBuilder(this.searchForEvaluate ? Material.LIME_DYE : Material.BARRIER,
                                 this.searchForEvaluate  ? Component.text("Filter nach Abgaben") :
                                         Component.text("Click um nach Abgaben zu Filtern")).build(),
