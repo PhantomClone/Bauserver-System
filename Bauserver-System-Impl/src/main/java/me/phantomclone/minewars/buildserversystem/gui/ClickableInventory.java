@@ -67,7 +67,7 @@ public class ClickableInventory implements Listener {
     public void onInventoryClickEvent(InventoryClickEvent event) {
         if (event.getWhoClicked() instanceof Player player && playerHasOpenInventoryList().contains(player)) {
             event.setCancelled(true);
-            if (event.getClickedInventory() != null && event.getCurrentItem() != null) {
+            if (event.getClickedInventory() == this.inventory && event.getCurrentItem() != null) {
                 this.integerClickableItemStackMap.getOrDefault(event.getSlot(),
                         this.fillClickableItemStack).onClick().accept(player, event.getClick());
             }
@@ -116,7 +116,7 @@ public class ClickableInventory implements Listener {
         return new ClickableItemStackBuilder(this, this.integerClickableItemStackMap);
     }
 
-    public void destroyListener() {
+    private void destroyListener() {
         HandlerList.unregisterAll(this);
     }
 
