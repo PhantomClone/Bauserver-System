@@ -47,6 +47,7 @@ public class ClickableInventory implements Listener {
 
     @EventHandler
     public void onInventoryOpenEvent(InventoryOpenEvent event) {
+        event.getPlayer().sendMessage("Open..");
         if (event.getPlayer() instanceof Player player && this.inventory.equals(event.getView().getTopInventory())) {
             this.playerOpenInventoryList.add(player);
         }

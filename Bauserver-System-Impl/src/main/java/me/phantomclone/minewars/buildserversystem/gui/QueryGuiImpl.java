@@ -144,7 +144,9 @@ public class QueryGuiImpl implements QueryGui {
                                     })
                                     .onClose(closedPlayer -> {
                                         setBuilderUuid(clickableInventory);
-                                        clickableInventory.registerListener().openInventory(player);
+                                        this.buildServerPlugin.getServer().getScheduler().runTask(this.buildServerPlugin, ()->
+                                                clickableInventory.registerListener().openInventory(player)
+                                        );
                                     })
                                     .open(player);
                         }
@@ -180,7 +182,9 @@ public class QueryGuiImpl implements QueryGui {
                                     })
                                     .onClose(closedPlayer -> {
                                         setWorldName(clickableInventory);
-                                        clickableInventory.registerListener().openInventory(player);
+                                        this.buildServerPlugin.getServer().getScheduler().runTask(this.buildServerPlugin, () ->
+                                            clickableInventory.registerListener().openInventory(player)
+                                        );
                                     })
                                     .open(player);
                         }
