@@ -11,14 +11,15 @@ import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.text.DateFormat;
+import java.text.Format;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public record BuildWorldDataStorageImpl(JavaPlugin javaPlugin, BuilderStorage builderStorage,
+public record BuildWorldDataStorageImpl(JavaPlugin javaPlugin, BuilderStorage builderStorage, Format dateFormat,
                                     StatementStage<?> createTableStatementStage,
                                     StatementStage<BuildWorldData> loadBuildWorldStatementStage,
                                     StatementStage<?> insertBuildWorldStatementStage,
@@ -38,7 +39,7 @@ public record BuildWorldDataStorageImpl(JavaPlugin javaPlugin, BuilderStorage bu
         implements BuildWorldDataStorage {
 
     public BuildWorldDataStorageImpl(JavaPlugin javaPlugin, DataSource dataSource, BuilderStorage builderStorage) {
-        this(javaPlugin, builderStorage,
+        this(javaPlugin, builderStorage, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"),
                 QueryBuilder.builder(dataSource).defaultConfig()
                         .query("CREATE TABLE IF NOT EXISTS BuildWorld(worldUuid BINARY(16) NOT NULL, worldName VARCHAR(255) NOT NULL, " +
                                 "gameType VARCHAR(10) NOT NULL, worldCreatorUuid BINARY(16) NOT NULL, " +
@@ -131,8 +132,9 @@ public record BuildWorldDataStorageImpl(JavaPlugin javaPlugin, BuilderStorage bu
     public CompletableFuture<Boolean> setApproved(UUID worldUuid, UUID approvedHeadBuilder, long approvedTime) {
         return approvedBuildWorldStatementStage().paramsBuilder(paramBuilder ->
                 paramBuilder.setBytes(approvedHeadBuilder == null ? null : UUIDConverter.convert(approvedHeadBuilder))
-                        .setString(approvedTime == 0 ? "0000-00-00 00:00:00" : DateFormat.getInstance()
-                                .format(new Date(approvedTime)).replace('.', '-').replace(",", ""))
+                        .setString(approvedTime == 0 ? "0000-00-00 00:00:00" :
+                                dateFormat().format(new Date(approvedTime))
+                        )
                         .setBytes(UUIDConverter.convert(worldUuid))
         ).update().execute().thenApply(integer -> integer != 0);
     }
